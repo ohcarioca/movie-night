@@ -203,5 +203,172 @@
   <section id="result">
   </section>
 
+  <!-- ==================== Game Script ==================== -->
+  <script>
+    // ==================== Data Arrays ====================
+    const MOODS = [
+      { emoji: '💕', name: 'Romântico' },
+      { emoji: '🔥', name: 'Adrenalina' },
+      { emoji: '🥹', name: 'Nostalgia' },
+      { emoji: '😂', name: 'Comédia' },
+      { emoji: '😱', name: 'Suspense' },
+      { emoji: '😭', name: 'Choradeira' }
+    ];
+
+    const FOODS = [
+      { emoji: '🍕', name: 'Pizza' },
+      { emoji: '🍿', name: 'Pipoca' },
+      { emoji: '🌭', name: 'Hot Dog' },
+      { emoji: '🍔', name: 'Hambúrguer' },
+      { emoji: '🍣', name: 'Sushi / Japa' },
+      { emoji: '🧁', name: 'Doces & Chocolates' },
+      { emoji: '🌮', name: 'Tacos / Mexicano' },
+      { emoji: '🍝', name: 'Macarrão' },
+      { emoji: '🥤', name: 'Açaí' },
+      { emoji: '🍗', name: 'Frango Frito' },
+      { emoji: '🧀', name: 'Tábua de Frios' },
+      { emoji: '🥪', name: 'Sanduíche' },
+      { emoji: '🍩', name: 'Donuts' },
+      { emoji: '🫕', name: 'Fondue' },
+      { emoji: '🥟', name: 'Esfiha / Árabe' },
+      { emoji: '🍜', name: 'Lámen / Ramen' }
+    ];
+
+    const MOVIES = [
+      { title: 'O Senhor dos Anéis: A Sociedade do Anel', year: 2001 },
+      { title: 'Star Wars – O Império Contra-Ataca', year: 1980 },
+      { title: 'O Poderoso Chefão', year: 1972 },
+      { title: 'Batman: O Cavaleiro das Trevas', year: 2008 },
+      { title: 'Um Sonho de Liberdade', year: 1994 },
+      { title: 'Tubarão', year: 1975 },
+      { title: 'Pulp Fiction: Tempo de Violência', year: 1994 },
+      { title: 'Vingadores: Guerra Infinita', year: 2018 },
+      { title: 'Os Caçadores da Arca Perdida', year: 1981 },
+      { title: 'Os Bons Companheiros', year: 1990 },
+      { title: 'Star Wars: Uma Nova Esperança', year: 1977 },
+      { title: 'Mad Max: Estrada da Fúria', year: 2015 },
+      { title: 'De Volta para o Futuro', year: 1985 },
+      { title: 'O Poderoso Chefão: Parte II', year: 1974 },
+      { title: 'Jurassic Park', year: 1993 },
+      { title: 'Blade Runner', year: 1982 },
+      { title: 'Aliens, O Resgate', year: 1986 },
+      { title: 'Parasita', year: 2019 },
+      { title: 'A Origem', year: 2010 },
+      { title: 'Matrix', year: 1999 },
+      { title: 'Vingadores: Ultimato', year: 2019 },
+      { title: '2001: Uma Odisseia no Espaço', year: 1968 },
+      { title: 'O Exterminador do Futuro 2', year: 1991 },
+      { title: 'Duro de Matar', year: 1988 },
+      { title: 'Clube da Luta', year: 1999 },
+      { title: 'Fogo Contra Fogo', year: 1995 },
+      { title: 'Apocalypse Now', year: 1979 },
+      { title: 'Indiana Jones e a Última Cruzada', year: 1989 },
+      { title: 'O Senhor dos Anéis: O Retorno do Rei', year: 2003 },
+      { title: 'O Senhor dos Anéis: As Duas Torres', year: 2002 },
+      { title: 'O Iluminado', year: 1980 },
+      { title: 'Brilho Eterno de uma Mente Sem Lembranças', year: 2004 },
+      { title: 'Se7en – Os Sete Crimes Capitais', year: 1995 },
+      { title: 'Três Homens em Conflito', year: 1966 },
+      { title: 'Gladiador', year: 2000 },
+      { title: 'Casablanca', year: 1942 },
+      { title: 'Cidadão Kane', year: 1941 },
+      { title: 'O Silêncio dos Inocentes', year: 1991 },
+      { title: 'Doze Homens e Uma Sentença', year: 1957 },
+      { title: 'Sangue Negro', year: 2007 },
+      { title: 'A Felicidade Não se Compra', year: 1946 },
+      { title: 'O Grande Lebowski', year: 1998 },
+      { title: 'A Lista de Schindler', year: 1993 },
+      { title: 'Faça a Coisa Certa', year: 1989 },
+      { title: 'Os Caça-Fantasmas', year: 1984 },
+      { title: 'Amor à Flor da Pele', year: 2000 },
+      { title: 'Cantando na Chuva', year: 1952 },
+      { title: 'La La Land', year: 2016 },
+      { title: 'Whiplash', year: 2014 },
+      { title: 'Caçadores de Emoção', year: 1991 },
+      { title: 'Forrest Gump', year: 1994 },
+      { title: 'O Resgate do Soldado Ryan', year: 1998 },
+      { title: 'A Rede Social', year: 2010 },
+      { title: 'Blade Runner 2049', year: 2017 },
+      { title: 'Guardiões da Galáxia', year: 2014 },
+      { title: 'Moonlight', year: 2016 },
+      { title: 'O Labirinto do Fauno', year: 2006 },
+      { title: 'Lawrence da Arábia', year: 1962 },
+      { title: 'Corra!', year: 2017 },
+      { title: 'A Viagem de Chihiro', year: 2001 },
+      { title: 'Vertigo', year: 1958 },
+      { title: 'Um Estranho no Ninho', year: 1975 },
+      { title: 'Sete Samurais', year: 1954 },
+      { title: 'Janela Indiscreta', year: 1954 },
+      { title: 'Cidade dos Sonhos', year: 2001 },
+      { title: 'Trainspotting', year: 1996 },
+      { title: 'Um Lugar Silencioso', year: 2018 },
+      { title: 'A Chegada', year: 2016 },
+      { title: 'Star Wars – O Retorno de Jedi', year: 1983 },
+      { title: 'Homem-Aranha: No Aranhaverso', year: 2018 },
+      { title: 'Up – Altas Aventuras', year: 2009 },
+      { title: 'Psicose', year: 1960 },
+      { title: 'Os Suspeitos', year: 1995 },
+      { title: 'Thor: Ragnarok', year: 2017 },
+      { title: 'Encontros e Desencontros', year: 2003 },
+      { title: 'Todo Mundo Quase Morto', year: 2004 },
+      { title: 'Pantera Negra', year: 2018 },
+      { title: 'O Exorcista', year: 1973 },
+      { title: 'Titanic', year: 1997 },
+      { title: 'Onde os Fracos Não Têm Vez', year: 2007 },
+      { title: 'Los Angeles: Cidade Proibida', year: 1997 },
+      { title: 'E.T. – O Extraterrestre', year: 1982 },
+      { title: 'O Exterminador do Futuro', year: 1984 },
+      { title: 'O Profissional', year: 1994 },
+      { title: 'Retrato de uma Jovem em Chamas', year: 2020 },
+      { title: 'Scott Pilgrim Contra o Mundo', year: 2010 },
+      { title: 'Donnie Darko', year: 2001 },
+      { title: 'O Segredo de Brokeback Mountain', year: 2005 },
+      { title: 'O Fabuloso Destino de Amélie Poulain', year: 2001 },
+      { title: 'Paddington 2', year: 2017 },
+      { title: 'Feitiço do Tempo', year: 1993 },
+      { title: 'Cães de Aluguel', year: 1992 }
+    ];
+
+    // ==================== Utility Functions ====================
+    function shuffleArray(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    // ==================== Game State Machine ====================
+    const screens = ['landing', 'dice-game', 'slot-game', 'wheel-game', 'result'];
+    let currentScreen = 0;
+    const gameState = { mood: null, movie: null, food: null };
+
+    function showScreen(id) {
+      document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function nextScreen() {
+      currentScreen++;
+      if (currentScreen < screens.length) {
+        showScreen(screens[currentScreen]);
+      }
+    }
+
+    function resetGame() {
+      currentScreen = 0;
+      gameState.mood = null;
+      gameState.movie = null;
+      gameState.food = null;
+      showScreen('landing');
+    }
+
+    // ==================== Wire Up Landing Button ====================
+    document.getElementById('btn-start').addEventListener('click', () => {
+      nextScreen(); // goes to dice-game
+    });
+  </script>
+
 </body>
 </html>
