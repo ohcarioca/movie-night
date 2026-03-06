@@ -403,6 +403,104 @@
       align-items: center;
       justify-content: center;
     }
+
+    /* ==================== Result Screen ==================== */
+    .celebration-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.3rem, 5vw, 2.2rem);
+      color: var(--neon-pink);
+      margin-bottom: 1.5rem;
+      animation: pulse-glow 1.5s ease-in-out infinite alternate;
+    }
+
+    .result-cards {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.8rem;
+      width: 100%;
+      max-width: 400px;
+      margin-bottom: 2rem;
+    }
+
+    .result-card {
+      background: rgba(26, 0, 48, 0.85);
+      border-radius: 16px;
+      padding: 1.2rem 1.5rem;
+      text-align: center;
+      width: 90%;
+      backdrop-filter: blur(10px);
+      animation: card-slide-in 0.6s ease-out both;
+    }
+
+    .result-card:nth-child(1) {
+      border: 2px solid var(--neon-cyan);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+      animation-delay: 0.2s;
+    }
+    .result-card:nth-child(2) {
+      border: 2px solid var(--neon-pink);
+      box-shadow: 0 0 20px rgba(255, 45, 117, 0.2);
+      animation-delay: 0.5s;
+    }
+    .result-card:nth-child(3) {
+      border: 2px solid var(--gold);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+      animation-delay: 0.8s;
+    }
+
+    @keyframes card-slide-in {
+      from { transform: translateY(40px) scale(0.9); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    .result-label {
+      font-family: var(--font-body);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: rgba(240, 240, 240, 0.5);
+      margin-bottom: 0.5rem;
+    }
+
+    .result-value {
+      font-family: var(--font-body);
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--white);
+    }
+
+    .result-year {
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      color: rgba(240, 240, 240, 0.6);
+      margin-top: 0.2rem;
+    }
+
+    /* Confetti */
+    .confetti-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 100;
+      overflow: hidden;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      top: -10px;
+      animation: confetti-fall linear forwards;
+    }
+
+    @keyframes confetti-fall {
+      0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
   </style>
 </head>
 <body>
@@ -494,6 +592,13 @@
 
   <!-- ==================== Result Section ==================== -->
   <section id="result">
+    <div class="confetti-container" id="confetti"></div>
+
+    <h2 class="neon-text celebration-title">SUA NOITE ESTÁ PRONTA!</h2>
+
+    <div id="result-cards" class="result-cards"></div>
+
+    <button id="btn-retry" class="neon-btn">NÃO CURTI, GIRAR TUDO DE NOVO! 🔄</button>
   </section>
 
   <!-- ==================== Game Script ==================== -->
@@ -663,7 +768,11 @@
     function nextScreen() {
       currentScreen++;
       if (currentScreen < screens.length) {
-        showScreen(screens[currentScreen]);
+        if (screens[currentScreen] === 'result') {
+          showResult();
+        } else {
+          showScreen(screens[currentScreen]);
+        }
       }
     }
 
@@ -958,6 +1067,57 @@
       startLightAnimation();
       requestAnimationFrame(animateSpin);
     });
+
+    // ==================== Result Screen ====================
+    function showResult() {
+      showScreen('result');
+
+      const container = document.getElementById('result-cards');
+      container.innerHTML = `
+        <div class="result-card">
+          <div class="result-label">MOOD DA NOITE</div>
+          <div class="result-value">${gameState.mood.emoji} ${gameState.mood.name}</div>
+        </div>
+        <div class="result-card">
+          <div class="result-label">FILME</div>
+          <div class="result-value">🎬 ${gameState.movie.title}</div>
+          <div class="result-year">(${gameState.movie.year})</div>
+        </div>
+        <div class="result-card">
+          <div class="result-label">COMIDA</div>
+          <div class="result-value">${gameState.food.emoji} ${gameState.food.name}</div>
+        </div>
+      `;
+
+      // Launch confetti
+      createConfetti();
+    }
+
+    function createConfetti() {
+      const container = document.getElementById('confetti');
+      container.innerHTML = '';
+      const colors = ['#ff2d75', '#00f0ff', '#ffe14d', '#ffd700', '#2ecc71', '#9b59b6'];
+
+      for (let i = 0; i < 50; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = Math.random() * 100 + '%';
+        piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDuration = (2 + Math.random() * 3) + 's';
+        piece.style.animationDelay = Math.random() * 2 + 's';
+        // Random shapes: square or rectangle
+        piece.style.width = (5 + Math.random() * 8) + 'px';
+        piece.style.height = (5 + Math.random() * 8) + 'px';
+        piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+        container.appendChild(piece);
+      }
+
+      // Clean up confetti after animations complete
+      setTimeout(() => { container.innerHTML = ''; }, 6000);
+    }
+
+    // ==================== Wire Retry Button ====================
+    document.getElementById('btn-retry').addEventListener('click', resetGame);
   </script>
 
 </body>
