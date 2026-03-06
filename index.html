@@ -219,10 +219,14 @@
     }
 
     .result-reveal {
-      font-family: var(--font-display);
-      font-size: clamp(1.5rem, 5vw, 2.5rem);
+      font-family: var(--font-body);
+      font-size: clamp(1rem, 4vw, 1.5rem);
+      font-weight: 700;
       color: var(--neon-yellow);
       animation: reveal-pop 0.5s ease-out;
+      max-width: 90vw;
+      text-align: center;
+      word-wrap: break-word;
     }
 
     @keyframes reveal-pop {
@@ -309,6 +313,23 @@
       align-items: center;
       justify-content: center;
       margin-top: 0.5rem;
+      max-width: 90vw;
+    }
+
+    .spin-counter {
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      color: var(--neon-yellow);
+      margin-bottom: 0.5rem;
+      opacity: 0.8;
+    }
+
+    .jackpot-text {
+      font-family: var(--font-display);
+      font-size: clamp(1.5rem, 6vw, 2.5rem);
+      color: var(--gold);
+      text-shadow: 0 0 20px var(--gold), 0 0 40px var(--gold);
+      animation: pulse-glow 0.5s ease-in-out infinite alternate, reveal-pop 0.5s ease-out;
     }
 
     /* ==================== Fortune Wheel - Tigrinho Style ==================== */
@@ -660,6 +681,7 @@
     <h2 class="neon-text">QUAL FILME DA NOITE?</h2>
 
     <div id="mood-badge" class="mood-badge"></div>
+    <div id="spin-counter" class="spin-counter"></div>
 
     <div class="slot-machine">
       <div class="slot-frame">
@@ -860,10 +882,13 @@
       document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
       document.getElementById(id).classList.add('active');
 
-      // Update mood badge when entering slot game
-      if (id === 'slot-game' && gameState.mood) {
-        document.getElementById('mood-badge').textContent =
-          `Mood: ${gameState.mood.emoji} ${gameState.mood.name}`;
+      // Update mood badge and init slot game when entering slot screen
+      if (id === 'slot-game') {
+        if (gameState.mood) {
+          document.getElementById('mood-badge').textContent =
+            `Mood: ${gameState.mood.emoji} ${gameState.mood.name}`;
+        }
+        initSlotGame();
       }
 
       // Set up wheel when entering wheel-game screen
@@ -895,6 +920,7 @@
       gameState.mood = null;
       gameState.movie = null;
       gameState.food = null;
+      document.getElementById('btn-spin').textContent = 'PUXAR A ALAVANCA 🎰';
       showScreen('landing');
     }
 
@@ -924,11 +950,10 @@
         { x: 90, y: 0 },      // bottom - 😭 Choradeira
       ];
 
-      // Dramatic spin: multiple full rotations + final position
-      const extraSpinsX = 720 + Math.random() * 360;
-      const extraSpinsY = 720 + Math.random() * 360;
-      const targetX = extraSpinsX + rotations[randomMood].x;
-      const targetY = extraSpinsY + rotations[randomMood].y;
+      // Dramatic spin: exact multiples of 360 + final position
+      const extraSpins = (Math.floor(Math.random() * 3) + 2) * 360; // 720, 1080, or 1440
+      const targetX = extraSpins + rotations[randomMood].x;
+      const targetY = extraSpins + rotations[randomMood].y;
 
       cube.style.transition = 'transform 2.5s cubic-bezier(0.2, 0.8, 0.3, 1)';
       cube.style.transform = `rotateX(${targetX}deg) rotateY(${targetY}deg)`;
@@ -948,75 +973,128 @@
       }, 2700);
     });
 
-    // ==================== Slot Machine ====================
-    function populateReels() {
-      for (let i = 1; i <= 3; i++) {
-        const strip = document.getElementById(`reel-${i}`);
-        strip.innerHTML = '';
-        strip.style.transition = 'none';
-        strip.style.transform = 'translateY(0)';
+    // ==================== Slot Machine (Trinca Mechanic) ====================
+    let slotSpinCount = 0;
+    let slotMaxSpins = 0;
+    let slotWinningMovie = null;
+    let slotIsSpinning = false;
 
-        const shuffled = shuffleArray(MOVIES);
-        shuffled.forEach(movie => {
-          const item = document.createElement('div');
-          item.className = 'reel-item';
-          item.textContent = `🎬 ${movie.title} (${movie.year})`;
-          strip.appendChild(item);
-        });
+    function initSlotGame() {
+      slotSpinCount = 0;
+      slotMaxSpins = Math.floor(Math.random() * 6) + 2; // 2 to 7 spins
+      slotWinningMovie = MOVIES[Math.floor(Math.random() * MOVIES.length)];
+      slotIsSpinning = false;
+      document.getElementById('slot-result').innerHTML = '';
+      updateSpinCounter();
+    }
+
+    function updateSpinCounter() {
+      document.getElementById('spin-counter').textContent =
+        `Tentativa ${slotSpinCount + 1} de ${slotMaxSpins}`;
+    }
+
+    function populateReelWithTarget(reelId, targetMovie) {
+      const strip = document.getElementById(reelId);
+      strip.innerHTML = '';
+      strip.style.transition = 'none';
+      strip.style.transform = 'translateY(0)';
+
+      // Build reel: random movies, then the target at the landing position
+      const shuffled = shuffleArray(MOVIES).slice(0, 15);
+      const landingIndex = shuffled.length; // target goes at the end
+      shuffled.push(targetMovie);
+
+      shuffled.forEach(movie => {
+        const item = document.createElement('div');
+        item.className = 'reel-item';
+        item.textContent = `🎬 ${movie.title} (${movie.year})`;
+        strip.appendChild(item);
+      });
+
+      return landingIndex;
+    }
+
+    function spinReels(movies) {
+      // movies = [movie1, movie2, movie3] — what each reel should land on
+      const itemHeight = 90;
+
+      for (let i = 0; i < 3; i++) {
+        const reelId = `reel-${i + 1}`;
+        const landingIndex = populateReelWithTarget(reelId, movies[i]);
+
+        const strip = document.getElementById(reelId);
+        void strip.offsetHeight; // force reflow
+
+        const offset = -(landingIndex * itemHeight);
+
+        setTimeout(() => {
+          strip.style.transition = `transform ${1.5 + i * 0.5}s cubic-bezier(0.1, 0.7, 0.3, 1)`;
+          strip.style.transform = `translateY(${offset}px)`;
+        }, i * 300);
       }
     }
 
+    function getRandomMovieExcluding(exclude) {
+      let movie;
+      do {
+        movie = MOVIES[Math.floor(Math.random() * MOVIES.length)];
+      } while (movie.title === exclude.title);
+      return movie;
+    }
+
     document.getElementById('btn-spin').addEventListener('click', () => {
+      if (slotIsSpinning) return;
+
       const btn = document.getElementById('btn-spin');
+      slotIsSpinning = true;
       btn.disabled = true;
       btn.style.opacity = '0.5';
 
-      // Show current mood
-      if (gameState.mood) {
-        document.getElementById('mood-badge').textContent =
-          `Mood: ${gameState.mood.emoji} ${gameState.mood.name}`;
-      }
-
-      // Clear previous result
       document.getElementById('slot-result').innerHTML = '';
+      slotSpinCount++;
+      updateSpinCounter();
 
-      // Populate reels with shuffled movies
-      populateReels();
+      const isLastSpin = slotSpinCount >= slotMaxSpins;
+      let reelMovies;
 
-      // Pick the winning movie
-      const selectedMovie = MOVIES[Math.floor(Math.random() * MOVIES.length)];
-
-      // Force layout recalculation
-      void document.getElementById('reel-1').offsetHeight;
-
-      // Spin each reel with increasing delay and duration
-      for (let i = 1; i <= 3; i++) {
-        const strip = document.getElementById(`reel-${i}`);
-        const itemCount = strip.children.length;
-        // Each reel stops at a random position (deeper = more items scrolled)
-        const stopAt = Math.floor(Math.random() * (itemCount - 10)) + 8;
-        const offset = -(stopAt * 90); // 90px per item
-
-        setTimeout(() => {
-          strip.style.transition = `transform ${1.5 + i * 0.7}s cubic-bezier(0.1, 0.7, 0.3, 1)`;
-          strip.style.transform = `translateY(${offset}px)`;
-        }, i * 400);
+      if (isLastSpin) {
+        // JACKPOT! All 3 reels show the same movie
+        reelMovies = [slotWinningMovie, slotWinningMovie, slotWinningMovie];
+      } else {
+        // Not yet — show 3 different movies (no match)
+        const m1 = MOVIES[Math.floor(Math.random() * MOVIES.length)];
+        const m2 = getRandomMovieExcluding(m1);
+        const m3 = getRandomMovieExcluding(m2);
+        reelMovies = [m1, m2, m3];
       }
 
-      // After all reels stop, show result
-      const totalTime = 400 * 3 + (1.5 + 3 * 0.7) * 1000 + 300;
-      setTimeout(() => {
-        gameState.movie = selectedMovie;
-        document.getElementById('slot-result').innerHTML =
-          `<span class="result-reveal">🎬 ${selectedMovie.title} (${selectedMovie.year})</span>`;
+      spinReels(reelMovies);
 
-        // Auto-advance
-        setTimeout(() => {
+      // Wait for all reels to stop
+      const waitTime = 300 * 3 + (1.5 + 2 * 0.5) * 1000 + 500;
+      setTimeout(() => {
+        slotIsSpinning = false;
+
+        if (isLastSpin) {
+          // JACKPOT!
+          gameState.movie = slotWinningMovie;
+          document.getElementById('slot-result').innerHTML =
+            `<div class="jackpot-text">🎰 JACKPOT! 🎰</div>
+             <span class="result-reveal">🎬 ${slotWinningMovie.title} (${slotWinningMovie.year})</span>`;
+
+          btn.textContent = 'PUXAR A ALAVANCA 🎰';
+          setTimeout(() => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            nextScreen();
+          }, 3000);
+        } else {
+          // Not a match — let them spin again
           btn.disabled = false;
           btn.style.opacity = '1';
-          nextScreen();
-        }, 2500);
-      }, totalTime);
+          btn.textContent = `PUXAR DE NOVO! (${slotSpinCount}/${slotMaxSpins}) 🎰`;
+        }
+      }, waitTime);
     });
 
     // ==================== Fortune Wheel (Tigrinho Style) ====================
