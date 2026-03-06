@@ -710,6 +710,152 @@
 
   <!-- ==================== Game Script ==================== -->
   <script>
+    // ==================== Sound Engine (Web Audio API) ====================
+    const SoundEngine = (() => {
+      let ctx = null;
+      let initialized = false;
+
+      function getCtx() {
+        if (!ctx) {
+          ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (ctx.state === 'suspended') ctx.resume();
+        return ctx;
+      }
+
+      function playTone(freq, startTime, duration, type = 'sine', volume = 0.15) {
+        const a = getCtx();
+        const osc = a.createOscillator();
+        const gain = a.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, startTime);
+        gain.gain.setValueAtTime(volume, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+        osc.connect(gain);
+        gain.connect(a.destination);
+        osc.start(startTime);
+        osc.stop(startTime + duration + 0.01);
+      }
+
+      function safe(fn) {
+        try { fn(); } catch (e) { /* silent fail */ }
+      }
+
+      return {
+        init() { safe(() => { if (!initialized) { getCtx(); initialized = true; } }); },
+
+        click() { safe(() => {
+          const a = getCtx(), t = a.currentTime;
+          playTone(1800, t, 0.06, 'sine', 0.1);
+          playTone(2400, t + 0.02, 0.04, 'sine', 0.08);
+        }); },
+
+        diceRoll() { safe(() => {
+          const a = getCtx(), t = a.currentTime, dur = 2.5;
+          const osc = a.createOscillator();
+          const gain = a.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(80, t);
+          osc.frequency.linearRampToValueAtTime(50, t + dur);
+          gain.gain.setValueAtTime(0.12, t);
+          gain.gain.linearRampToValueAtTime(0.02, t + dur);
+          osc.connect(gain); gain.connect(a.destination);
+          osc.start(t); osc.stop(t + dur + 0.01);
+          for (let i = 0; i < 30; i++) {
+            const ct = t + (i / 30) * dur;
+            playTone(300 + Math.random() * 400, ct, 0.03, 'square', 0.04 * (1 - i / 30));
+          }
+        }); },
+
+        chime() { safe(() => {
+          const a = getCtx(), t = a.currentTime;
+          playTone(1047, t, 0.3, 'sine', 0.15);
+          playTone(1319, t + 0.12, 0.4, 'sine', 0.18);
+          playTone(2093, t + 0.05, 0.5, 'sine', 0.05);
+        }); },
+
+        slotSpin() { safe(() => {
+          const a = getCtx(), t = a.currentTime;
+          for (let r = 0; r < 3; r++) {
+            const delay = r * 0.3;
+            const spinDur = 1.5 + r * 0.5;
+            const clicks = Math.floor(spinDur * 12);
+            for (let i = 0; i < clicks; i++) {
+              const p = i / clicks;
+              const ct = t + delay + p * p * spinDur;
+              if (ct < t + delay + spinDur) {
+                playTone(800 + Math.random() * 200, ct, 0.02, 'square', 0.04);
+              }
+            }
+            const osc = a.createOscillator();
+            const gain = a.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(120 - r * 15, t + delay);
+            gain.gain.setValueAtTime(0.04, t + delay);
+            gain.gain.linearRampToValueAtTime(0.001, t + delay + spinDur);
+            osc.connect(gain); gain.connect(a.destination);
+            osc.start(t + delay); osc.stop(t + delay + spinDur + 0.01);
+          }
+        }); },
+
+        buzzer() { safe(() => {
+          const a = getCtx(), t = a.currentTime;
+          const osc = a.createOscillator();
+          const gain = a.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(300, t);
+          osc.frequency.exponentialRampToValueAtTime(100, t + 0.5);
+          gain.gain.setValueAtTime(0.1, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+          osc.connect(gain); gain.connect(a.destination);
+          osc.start(t); osc.stop(t + 0.55);
+        }); },
+
+        jackpot() { safe(() => {
+          const a = getCtx(), t = a.currentTime;
+          const notes = [523, 659, 784, 1047];
+          notes.forEach((freq, i) => {
+            playTone(freq, t + i * 0.15, 0.6, 'sine', 0.15);
+            playTone(freq * 2, t + i * 0.15 + 0.02, 0.4, 'sine', 0.06);
+          });
+          setTimeout(() => {
+            const t2 = getCtx().currentTime;
+            notes.forEach(f => {
+              playTone(f, t2, 0.8, 'sine', 0.08);
+              playTone(f * 1.5, t2, 0.6, 'triangle', 0.04);
+            });
+          }, 700);
+          for (let i = 0; i < 15; i++) {
+            const pt = t + 0.8 + Math.random() * 0.8;
+            playTone(2000 + Math.random() * 2000, pt, 0.08, 'sine', 0.05);
+          }
+        }); },
+
+        wheelTick(speed) { safe(() => {
+          const a = getCtx(), t = a.currentTime;
+          const freq = 600 + speed * 800;
+          const vol = 0.03 + speed * 0.07;
+          playTone(freq, t, 0.02 + (1 - speed) * 0.03, 'sine', vol);
+        }); },
+
+        celebration() { safe(() => {
+          const a = getCtx(), t = a.currentTime;
+          const scale = [523, 587, 659, 698, 784, 880, 988, 1047];
+          scale.forEach((freq, i) => {
+            playTone(freq, t + i * 0.08, 0.4, 'sine', 0.1);
+          });
+          for (let i = 0; i < 20; i++) {
+            const st = t + 0.8 + Math.random() * 1.5;
+            playTone(1500 + Math.random() * 2500, st, 0.1, 'sine', 0.04);
+          }
+          setTimeout(() => {
+            const t2 = getCtx().currentTime;
+            [262, 330, 392, 523].forEach(f => playTone(f, t2, 1.2, 'sine', 0.06));
+          }, 1200);
+        }); }
+      };
+    })();
+
     // ==================== Data Arrays ====================
     const MOODS = [
       { emoji: '💕', name: 'Romântico' },
@@ -963,6 +1109,8 @@
 
     // ==================== Wire Up Landing Button ====================
     document.getElementById('btn-start').addEventListener('click', () => {
+      SoundEngine.init();
+      SoundEngine.click();
       nextScreen(); // goes to dice-game
     });
     // ==================== Dice Game ====================
@@ -970,6 +1118,7 @@
       const btn = document.getElementById('btn-roll');
       btn.disabled = true;
       btn.style.opacity = '0.5';
+      SoundEngine.diceRoll();
 
       // Clear previous result
       document.getElementById('dice-result').innerHTML = '';
@@ -997,6 +1146,7 @@
 
       // After spin completes, show result
       setTimeout(() => {
+        SoundEngine.chime();
         gameState.mood = MOODS[randomMood];
         document.getElementById('dice-result').innerHTML =
           `<span class="result-reveal">${MOODS[randomMood].emoji} ${MOODS[randomMood].name}!</span>`;
@@ -1108,6 +1258,7 @@
       }
 
       spinReels(reelMovies);
+      SoundEngine.slotSpin();
 
       // Wait for all reels to stop
       const waitTime = 300 * 3 + (1.5 + 2 * 0.5) * 1000 + 500;
@@ -1116,6 +1267,7 @@
 
         if (isLastSpin) {
           // JACKPOT!
+          SoundEngine.jackpot();
           gameState.movie = slotWinningMovie;
           document.getElementById('slot-result').innerHTML =
             `<div class="jackpot-text">🎰 JACKPOT! 🎰</div>
@@ -1129,6 +1281,7 @@
           }, 3000);
         } else {
           // Not a match — let them spin again
+          SoundEngine.buzzer();
           btn.disabled = false;
           btn.style.opacity = '1';
           btn.textContent = `PUXAR DE NOVO! (${slotSpinCount}/${slotMaxSpins}) 🎰`;
@@ -1230,6 +1383,7 @@
       const duration = 6000;
       const startTime = performance.now();
       let startAngle = 0; // could track previous angle for continuity
+      let lastSegIdx = -1; // for wheel tick sounds
 
       function animateSpin(now) {
         const elapsed = now - startTime;
@@ -1238,12 +1392,20 @@
         const eased = 1 - Math.pow(1 - progress, 4);
         const currentAngle = eased * totalAngle;
 
+        // Tick on each segment crossing
+        const curSeg = Math.floor((currentAngle % 360) / segAngle);
+        if (curSeg !== lastSegIdx) {
+          lastSegIdx = curSeg;
+          SoundEngine.wheelTick(1 - progress);
+        }
+
         drawWheel(currentAngle);
 
         if (progress < 1) {
           requestAnimationFrame(animateSpin);
         } else {
           // Spin complete
+          SoundEngine.chime();
           isWheelSpinning = false;
           gameState.food = FOODS[selectedIndex];
 
@@ -1284,6 +1446,7 @@
 
       // Launch confetti
       createConfetti();
+      SoundEngine.celebration();
     }
 
     function createConfetti() {
@@ -1310,7 +1473,10 @@
     }
 
     // ==================== Wire Retry Button ====================
-    document.getElementById('btn-retry').addEventListener('click', resetGame);
+    document.getElementById('btn-retry').addEventListener('click', () => {
+      SoundEngine.click();
+      resetGame();
+    });
   </script>
 
 </body>
