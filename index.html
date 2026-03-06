@@ -307,6 +307,102 @@
       justify-content: center;
       margin-top: 0.5rem;
     }
+
+    /* ==================== Fortune Wheel - Tigrinho Style ==================== */
+    .gold-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.2rem, 5vw, 2rem);
+      color: var(--gold);
+      text-shadow: 0 0 10px var(--gold), 0 0 40px var(--gold), 0 0 80px rgba(255, 215, 0, 0.5);
+      margin-bottom: 0.5rem;
+    }
+
+    .wheel-badges {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .wheel-badge {
+      background: rgba(255, 225, 77, 0.1);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      border-radius: 20px;
+      padding: 0.2rem 0.8rem;
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      color: var(--neon-yellow);
+    }
+
+    .wheel-container {
+      position: relative;
+      width: 320px;
+      height: 320px;
+      margin: 0.5rem auto;
+    }
+
+    .wheel-pointer {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 2.5rem;
+      color: var(--gold);
+      filter: drop-shadow(0 0 10px var(--gold));
+      z-index: 10;
+      line-height: 1;
+    }
+
+    #wheel-canvas {
+      border-radius: 50%;
+      border: 6px solid var(--gold);
+      box-shadow: 0 0 40px rgba(255, 215, 0, 0.4), 0 0 80px rgba(255, 215, 0, 0.15), inset 0 0 30px rgba(255, 215, 0, 0.1);
+    }
+
+    .wheel-lights {
+      position: absolute;
+      width: 340px;
+      height: 340px;
+      top: -10px;
+      left: -10px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .wheel-light {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--gold);
+      box-shadow: 0 0 6px var(--gold), 0 0 12px rgba(255, 215, 0, 0.5);
+    }
+
+    .wheel-light.on {
+      background: #fff;
+      box-shadow: 0 0 8px #fff, 0 0 16px var(--gold);
+    }
+
+    .gold-btn {
+      border-color: var(--gold) !important;
+      color: var(--gold) !important;
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.3), inset 0 0 15px rgba(255, 215, 0, 0.1) !important;
+    }
+
+    .gold-btn:hover {
+      background: rgba(255, 215, 0, 0.15) !important;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.5), inset 0 0 30px rgba(255, 215, 0, 0.2) !important;
+    }
+
+    #wheel-result {
+      min-height: 3.5rem;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
   </style>
 </head>
 <body>
@@ -381,6 +477,19 @@
 
   <!-- ==================== Wheel Game Section ==================== -->
   <section id="wheel-game">
+    <h2 class="gold-title">O QUE COMER? 🐯</h2>
+
+    <div id="wheel-badges" class="wheel-badges"></div>
+
+    <div class="wheel-container">
+      <div class="wheel-lights" id="wheel-lights"></div>
+      <div class="wheel-pointer">▼</div>
+      <canvas id="wheel-canvas" width="320" height="320"></canvas>
+    </div>
+
+    <div id="wheel-result"></div>
+
+    <button id="btn-wheel" class="neon-btn gold-btn">GIRAR A RODA 🐯</button>
   </section>
 
   <!-- ==================== Result Section ==================== -->
@@ -537,6 +646,18 @@
         document.getElementById('mood-badge').textContent =
           `Mood: ${gameState.mood.emoji} ${gameState.mood.name}`;
       }
+
+      // Set up wheel when entering wheel-game screen
+      if (id === 'wheel-game') {
+        createWheelLights();
+        drawWheel(0);
+        if (gameState.mood && gameState.movie) {
+          document.getElementById('wheel-badges').innerHTML = `
+            <span class="wheel-badge">${gameState.mood.emoji} ${gameState.mood.name}</span>
+            <span class="wheel-badge">🎬 ${gameState.movie.title}</span>
+          `;
+        }
+      }
     }
 
     function nextScreen() {
@@ -673,6 +794,169 @@
           nextScreen();
         }, 2500);
       }, totalTime);
+    });
+
+    // ==================== Fortune Wheel (Tigrinho Style) ====================
+
+    // Generate lights around the wheel
+    function createWheelLights() {
+      const container = document.getElementById('wheel-lights');
+      container.innerHTML = '';
+      const numLights = 24;
+      const radius = 170; // half of 340px container
+      for (let i = 0; i < numLights; i++) {
+        const angle = (i / numLights) * 2 * Math.PI - Math.PI / 2;
+        const light = document.createElement('div');
+        light.className = 'wheel-light';
+        light.style.left = (radius + radius * Math.cos(angle) - 4) + 'px';
+        light.style.top = (radius + radius * Math.sin(angle) - 4) + 'px';
+        container.appendChild(light);
+      }
+    }
+
+    // Blinking lights animation
+    let lightInterval = null;
+    function startLightAnimation() {
+      const lights = document.querySelectorAll('.wheel-light');
+      let toggle = false;
+      lightInterval = setInterval(() => {
+        lights.forEach((light, i) => {
+          light.classList.toggle('on', (i % 2 === 0) === toggle);
+        });
+        toggle = !toggle;
+      }, 300);
+    }
+
+    function stopLightAnimation() {
+      if (lightInterval) {
+        clearInterval(lightInterval);
+        lightInterval = null;
+      }
+    }
+
+    // Draw the wheel using Canvas
+    const WHEEL_COLORS = [
+      '#e74c3c', '#f39c12', '#2ecc71', '#e67e22',
+      '#ff2d75', '#00bcd4', '#9b59b6', '#27ae60',
+      '#c0392b', '#f1c40f', '#1abc9c', '#d35400',
+      '#e91e63', '#00f0ff', '#8e44ad', '#2ecc71'
+    ];
+
+    function drawWheel(rotationDeg) {
+      const canvas = document.getElementById('wheel-canvas');
+      const ctx = canvas.getContext('2d');
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const r = 154; // radius leaving space for border
+      const segAngle = (2 * Math.PI) / FOODS.length;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate((rotationDeg * Math.PI) / 180);
+
+      FOODS.forEach((food, i) => {
+        const startAngle = i * segAngle - Math.PI / 2;
+        const endAngle = startAngle + segAngle;
+
+        // Draw segment
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, r, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = WHEEL_COLORS[i];
+        ctx.fill();
+        ctx.strokeStyle = '#ffd700';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Draw text
+        ctx.save();
+        ctx.rotate(startAngle + segAngle / 2 + Math.PI / 2);
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 10px Outfit, sans-serif';
+        ctx.shadowColor = 'rgba(0,0,0,0.7)';
+        ctx.shadowBlur = 3;
+        // Draw emoji
+        ctx.font = '16px sans-serif';
+        ctx.fillText(food.emoji, 0, -r + 25);
+        // Draw name
+        ctx.font = 'bold 9px Outfit, sans-serif';
+        ctx.fillText(food.name, 0, -r + 42);
+        ctx.restore();
+      });
+
+      ctx.restore();
+
+      // Draw center circle (golden hub)
+      ctx.beginPath();
+      ctx.arc(cx, cy, 22, 0, 2 * Math.PI);
+      const gradient = ctx.createRadialGradient(cx, cy, 5, cx, cy, 22);
+      gradient.addColorStop(0, '#fff');
+      gradient.addColorStop(0.5, '#ffd700');
+      gradient.addColorStop(1, '#b8860b');
+      ctx.fillStyle = gradient;
+      ctx.fill();
+      ctx.strokeStyle = '#8B6914';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // Spin the wheel
+    let isWheelSpinning = false;
+
+    document.getElementById('btn-wheel').addEventListener('click', () => {
+      if (isWheelSpinning) return;
+      isWheelSpinning = true;
+      document.getElementById('btn-wheel').disabled = true;
+      document.getElementById('btn-wheel').style.opacity = '0.5';
+      document.getElementById('wheel-result').innerHTML = '';
+
+      const selectedIndex = Math.floor(Math.random() * FOODS.length);
+      const segAngle = 360 / FOODS.length;
+
+      // Target: pointer is at top (0 degrees). We need the selected segment's center at the top.
+      // Segments start from -90deg (top). Segment i center is at i * segAngle.
+      // So we need to rotate so that segment i is at the top: -(i * segAngle + segAngle/2)
+      const targetSegCenter = selectedIndex * segAngle + segAngle / 2;
+      const baseAngle = 360 - targetSegCenter; // this puts the segment at top
+      const totalAngle = 360 * 8 + baseAngle; // 8 full spins + final position
+
+      const duration = 6000;
+      const startTime = performance.now();
+      let startAngle = 0; // could track previous angle for continuity
+
+      function animateSpin(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease out quart for dramatic deceleration
+        const eased = 1 - Math.pow(1 - progress, 4);
+        const currentAngle = eased * totalAngle;
+
+        drawWheel(currentAngle);
+
+        if (progress < 1) {
+          requestAnimationFrame(animateSpin);
+        } else {
+          // Spin complete
+          isWheelSpinning = false;
+          gameState.food = FOODS[selectedIndex];
+
+          document.getElementById('wheel-result').innerHTML =
+            `<span class="result-reveal">${FOODS[selectedIndex].emoji} ${FOODS[selectedIndex].name}!</span>`;
+
+          setTimeout(() => {
+            stopLightAnimation();
+            document.getElementById('btn-wheel').disabled = false;
+            document.getElementById('btn-wheel').style.opacity = '1';
+            nextScreen();
+          }, 2500);
+        }
+      }
+
+      startLightAnimation();
+      requestAnimationFrame(animateSpin);
     });
   </script>
 
