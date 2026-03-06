@@ -89,12 +89,102 @@
         0 0 40px var(--neon-cyan),
         0 0 80px var(--neon-cyan);
     }
+
+    /* ==================== Landing Screen ==================== */
+    #landing h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 8vw, 4.5rem);
+      color: var(--neon-pink);
+      text-align: center;
+      animation: pulse-glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse-glow {
+      from { text-shadow: 0 0 10px var(--neon-pink), 0 0 40px var(--neon-pink); }
+      to { text-shadow: 0 0 20px var(--neon-pink), 0 0 60px var(--neon-pink), 0 0 100px var(--neon-pink); }
+    }
+
+    #landing p {
+      font-family: var(--font-body);
+      color: var(--white);
+      font-size: 1.1rem;
+      opacity: 0.8;
+      margin: 1rem 0 2rem;
+    }
+
+    .preview-icons {
+      display: flex;
+      gap: 2.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .preview-icon {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .preview-icon span {
+      font-size: 2.5rem;
+      filter: drop-shadow(0 0 8px var(--neon-cyan));
+    }
+
+    .preview-icon small {
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0.8;
+    }
+
+    .neon-btn {
+      font-family: var(--font-body);
+      font-size: 1.3rem;
+      font-weight: 700;
+      padding: 1rem 2.5rem;
+      border: 2px solid var(--neon-cyan);
+      background: transparent;
+      color: var(--neon-cyan);
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      transition: all 0.3s;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.3), inset 0 0 15px rgba(0, 240, 255, 0.1);
+      border-radius: 8px;
+    }
+    .neon-btn:hover {
+      background: rgba(0, 240, 255, 0.15);
+      box-shadow: 0 0 30px rgba(0, 240, 255, 0.5), inset 0 0 30px rgba(0, 240, 255, 0.2);
+      transform: scale(1.05);
+    }
+    .neon-btn:active {
+      transform: scale(0.95);
+    }
   </style>
 </head>
 <body>
 
   <!-- ==================== Landing Section ==================== -->
   <section id="landing" class="active">
+    <h1 class="neon-text">MOVIE NIGHT</h1>
+    <p>Chega de briga! Deixa a sorte decidir. 🎰</p>
+    <div class="preview-icons">
+      <div class="preview-icon">
+        <span>🎲</span>
+        <small>Mood</small>
+      </div>
+      <div class="preview-icon">
+        <span>🎰</span>
+        <small>Filme</small>
+      </div>
+      <div class="preview-icon">
+        <span>🐯</span>
+        <small>Comida</small>
+      </div>
+    </div>
+    <button id="btn-start" class="neon-btn">COMEÇAR A NOITE</button>
   </section>
 
   <!-- ==================== Dice Game Section ==================== -->
