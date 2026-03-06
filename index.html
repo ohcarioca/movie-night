@@ -227,6 +227,86 @@
       70% { transform: scale(1.3); }
       100% { transform: scale(1); opacity: 1; }
     }
+
+    /* ==================== Slot Machine ==================== */
+    #slot-game h2 {
+      font-family: var(--font-display);
+      font-size: clamp(1.2rem, 5vw, 2rem);
+      color: var(--neon-pink);
+      margin-bottom: 0.5rem;
+    }
+
+    .mood-badge {
+      background: rgba(255, 225, 77, 0.15);
+      border: 1px solid var(--neon-yellow);
+      border-radius: 20px;
+      padding: 0.3rem 1rem;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      color: var(--neon-yellow);
+      margin-bottom: 1.5rem;
+    }
+
+    .slot-machine {
+      margin: 1rem auto;
+      max-width: 380px;
+      width: 90%;
+    }
+
+    .slot-frame {
+      background: linear-gradient(145deg, #2a0045, #15002a);
+      border: 3px solid var(--gold);
+      border-radius: 16px;
+      padding: 1.5rem 1rem;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.3), inset 0 0 30px rgba(0, 0, 0, 0.5);
+      position: relative;
+    }
+
+    .slot-reels {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .reel-window {
+      width: 100px;
+      height: 90px;
+      overflow: hidden;
+      background: #0a0015;
+      border: 2px solid var(--gold-dark);
+      border-radius: 8px;
+      position: relative;
+    }
+
+    .reel-strip {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .reel-item {
+      width: 100px;
+      height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      text-align: center;
+      font-family: var(--font-body);
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: var(--white);
+      line-height: 1.2;
+      flex-shrink: 0;
+    }
+
+    #slot-result {
+      min-height: 3.5rem;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 0.5rem;
+    }
   </style>
 </head>
 <body>
@@ -274,6 +354,29 @@
 
   <!-- ==================== Slot Game Section ==================== -->
   <section id="slot-game">
+    <h2 class="neon-text">QUAL FILME DA NOITE?</h2>
+
+    <div id="mood-badge" class="mood-badge"></div>
+
+    <div class="slot-machine">
+      <div class="slot-frame">
+        <div class="slot-reels">
+          <div class="reel-window">
+            <div class="reel-strip" id="reel-1"></div>
+          </div>
+          <div class="reel-window">
+            <div class="reel-strip" id="reel-2"></div>
+          </div>
+          <div class="reel-window">
+            <div class="reel-strip" id="reel-3"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="slot-result"></div>
+
+    <button id="btn-spin" class="neon-btn">PUXAR A ALAVANCA 🎰</button>
   </section>
 
   <!-- ==================== Wheel Game Section ==================== -->
@@ -428,6 +531,12 @@
     function showScreen(id) {
       document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
       document.getElementById(id).classList.add('active');
+
+      // Update mood badge when entering slot game
+      if (id === 'slot-game' && gameState.mood) {
+        document.getElementById('mood-badge').textContent =
+          `Mood: ${gameState.mood.emoji} ${gameState.mood.name}`;
+      }
     }
 
     function nextScreen() {
@@ -493,6 +602,77 @@
           nextScreen();
         }, 2000);
       }, 2700);
+    });
+
+    // ==================== Slot Machine ====================
+    function populateReels() {
+      for (let i = 1; i <= 3; i++) {
+        const strip = document.getElementById(`reel-${i}`);
+        strip.innerHTML = '';
+        strip.style.transition = 'none';
+        strip.style.transform = 'translateY(0)';
+
+        const shuffled = shuffleArray(MOVIES);
+        shuffled.forEach(movie => {
+          const item = document.createElement('div');
+          item.className = 'reel-item';
+          item.textContent = `🎬 ${movie.title} (${movie.year})`;
+          strip.appendChild(item);
+        });
+      }
+    }
+
+    document.getElementById('btn-spin').addEventListener('click', () => {
+      const btn = document.getElementById('btn-spin');
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+
+      // Show current mood
+      if (gameState.mood) {
+        document.getElementById('mood-badge').textContent =
+          `Mood: ${gameState.mood.emoji} ${gameState.mood.name}`;
+      }
+
+      // Clear previous result
+      document.getElementById('slot-result').innerHTML = '';
+
+      // Populate reels with shuffled movies
+      populateReels();
+
+      // Pick the winning movie
+      const selectedMovie = MOVIES[Math.floor(Math.random() * MOVIES.length)];
+
+      // Force layout recalculation
+      void document.getElementById('reel-1').offsetHeight;
+
+      // Spin each reel with increasing delay and duration
+      for (let i = 1; i <= 3; i++) {
+        const strip = document.getElementById(`reel-${i}`);
+        const itemCount = strip.children.length;
+        // Each reel stops at a random position (deeper = more items scrolled)
+        const stopAt = Math.floor(Math.random() * (itemCount - 10)) + 8;
+        const offset = -(stopAt * 90); // 90px per item
+
+        setTimeout(() => {
+          strip.style.transition = `transform ${1.5 + i * 0.7}s cubic-bezier(0.1, 0.7, 0.3, 1)`;
+          strip.style.transform = `translateY(${offset}px)`;
+        }, i * 400);
+      }
+
+      // After all reels stop, show result
+      const totalTime = 400 * 3 + (1.5 + 3 * 0.7) * 1000 + 300;
+      setTimeout(() => {
+        gameState.movie = selectedMovie;
+        document.getElementById('slot-result').innerHTML =
+          `<span class="result-reveal">🎬 ${selectedMovie.title} (${selectedMovie.year})</span>`;
+
+        // Auto-advance
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.style.opacity = '1';
+          nextScreen();
+        }, 2500);
+      }, totalTime);
     });
   </script>
 
