@@ -386,10 +386,10 @@
 
     .wheel-lights {
       position: absolute;
-      width: 340px;
-      height: 340px;
-      top: -10px;
-      left: -10px;
+      width: 332px;
+      height: 332px;
+      top: -6px;
+      left: -6px;
       border-radius: 50%;
       pointer-events: none;
       z-index: 5;
@@ -581,8 +581,10 @@
         height: 280px;
       }
       .wheel-lights {
-        width: 300px;
-        height: 300px;
+        width: 292px;
+        height: 292px;
+        top: -6px;
+        left: -6px;
       }
       .dice-scene {
         width: 110px;
@@ -985,12 +987,12 @@
       slotWinningMovie = MOVIES[Math.floor(Math.random() * MOVIES.length)];
       slotIsSpinning = false;
       document.getElementById('slot-result').innerHTML = '';
-      updateSpinCounter();
+      document.getElementById('spin-counter').textContent = '';
     }
 
     function updateSpinCounter() {
       document.getElementById('spin-counter').textContent =
-        `Tentativa ${slotSpinCount + 1} de ${slotMaxSpins}`;
+        `Tentativa ${slotSpinCount} de ${slotMaxSpins}`;
     }
 
     function populateReelWithTarget(reelId, targetMovie) {
@@ -1104,13 +1106,15 @@
       const container = document.getElementById('wheel-lights');
       container.innerHTML = '';
       const numLights = 24;
-      const radius = 170; // half of 340px container
+      const containerSize = 332;
+      const center = containerSize / 2;
+      const radius = center; // lights sit on the outer edge of the gold border
       for (let i = 0; i < numLights; i++) {
         const angle = (i / numLights) * 2 * Math.PI - Math.PI / 2;
         const light = document.createElement('div');
         light.className = 'wheel-light';
-        light.style.left = (radius + radius * Math.cos(angle) - 4) + 'px';
-        light.style.top = (radius + radius * Math.sin(angle) - 4) + 'px';
+        light.style.left = (center + radius * Math.cos(angle) - 4) + 'px';
+        light.style.top = (center + radius * Math.sin(angle) - 4) + 'px';
         container.appendChild(light);
       }
     }
@@ -1176,15 +1180,15 @@
         ctx.rotate(startAngle + segAngle / 2 + Math.PI / 2);
         ctx.textAlign = 'center';
         ctx.fillStyle = '#fff';
-        ctx.font = 'bold 10px Outfit, sans-serif';
-        ctx.shadowColor = 'rgba(0,0,0,0.7)';
-        ctx.shadowBlur = 3;
+        ctx.shadowColor = 'rgba(0,0,0,0.8)';
+        ctx.shadowBlur = 4;
         // Draw emoji
-        ctx.font = '16px sans-serif';
-        ctx.fillText(food.emoji, 0, -r + 25);
-        // Draw name
-        ctx.font = 'bold 9px Outfit, sans-serif';
-        ctx.fillText(food.name, 0, -r + 42);
+        ctx.font = '14px sans-serif';
+        ctx.fillText(food.emoji, 0, -r + 22);
+        // Draw name (truncate if too long)
+        ctx.font = 'bold 7px Outfit, sans-serif';
+        const name = food.name.length > 12 ? food.name.substring(0, 11) + '…' : food.name;
+        ctx.fillText(name, 0, -r + 35);
         ctx.restore();
       });
 
