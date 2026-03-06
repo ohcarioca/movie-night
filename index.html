@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movie Night 🎰</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎰</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee+Shade&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ==================== CSS Custom Properties ==================== */
+    :root {
+      --bg-dark: #0a0015;
+      --bg-purple: #1a0030;
+      --bg-blue: #0d1b2a;
+      --neon-pink: #ff2d75;
+      --neon-cyan: #00f0ff;
+      --neon-yellow: #ffe14d;
+      --gold: #ffd700;
+      --gold-dark: #b8860b;
+      --white: #f0f0f0;
+      --font-display: 'Bungee Shade', cursive;
+      --font-body: 'Outfit', sans-serif;
+    }
+
+    /* ==================== CSS Reset ==================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ==================== Body ==================== */
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, var(--bg-dark), var(--bg-purple), var(--bg-blue));
+      background-size: 400% 400%;
+      animation: gradientShift 15s ease infinite;
+      font-family: var(--font-body);
+      color: var(--white);
+      overflow-x: hidden;
+    }
+
+    @keyframes gradientShift {
+      0% {
+        background-position: 0% 50%;
+      }
+      25% {
+        background-position: 100% 0%;
+      }
+      50% {
+        background-position: 100% 50%;
+      }
+      75% {
+        background-position: 0% 100%;
+      }
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+
+    /* ==================== Sections ==================== */
+    section {
+      min-height: 100vh;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    section.active {
+      display: flex;
+    }
+
+    /* ==================== Neon Text Utilities ==================== */
+    .neon-text {
+      text-shadow:
+        0 0 10px var(--neon-pink),
+        0 0 40px var(--neon-pink),
+        0 0 80px var(--neon-pink);
+    }
+
+    .neon-text-cyan {
+      text-shadow:
+        0 0 10px var(--neon-cyan),
+        0 0 40px var(--neon-cyan),
+        0 0 80px var(--neon-cyan);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== Landing Section ==================== -->
+  <section id="landing" class="active">
+  </section>
+
+  <!-- ==================== Dice Game Section ==================== -->
+  <section id="dice-game">
+  </section>
+
+  <!-- ==================== Slot Game Section ==================== -->
+  <section id="slot-game">
+  </section>
+
+  <!-- ==================== Wheel Game Section ==================== -->
+  <section id="wheel-game">
+  </section>
+
+  <!-- ==================== Result Section ==================== -->
+  <section id="result">
+  </section>
+
+</body>
+</html>
