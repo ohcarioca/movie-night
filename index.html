@@ -741,8 +741,83 @@
         try { fn(); } catch (e) { /* silent fail */ }
       }
 
+      // ---- Casino Ambient Background ----
+      let ambientRunning = false;
+      let ambientNodes = [];
+      let ambientTimer = null;
+
+      function startAmbient() {
+        if (ambientRunning) return;
+        ambientRunning = true;
+        const a = getCtx();
+
+        // Layer 1: Deep warm pad (low drone simulating room hum)
+        const pad = a.createOscillator();
+        const padGain = a.createGain();
+        pad.type = 'sine';
+        pad.frequency.setValueAtTime(55, a.currentTime); // A1 - deep warm bass
+        padGain.gain.setValueAtTime(0.03, a.currentTime);
+        pad.connect(padGain); padGain.connect(a.destination);
+        pad.start();
+        ambientNodes.push(pad, padGain);
+
+        // Layer 2: Soft fifth harmony (adds warmth)
+        const pad2 = a.createOscillator();
+        const pad2Gain = a.createGain();
+        pad2.type = 'sine';
+        pad2.frequency.setValueAtTime(82, a.currentTime); // E2 - fifth above bass
+        pad2Gain.gain.setValueAtTime(0.015, a.currentTime);
+        pad2.connect(pad2Gain); pad2Gain.connect(a.destination);
+        pad2.start();
+        ambientNodes.push(pad2, pad2Gain);
+
+        // Layer 3: Very subtle high shimmer (neon buzz feel)
+        const shimmer = a.createOscillator();
+        const shimmerGain = a.createGain();
+        shimmer.type = 'sine';
+        shimmer.frequency.setValueAtTime(3520, a.currentTime); // A7 - neon hum
+        shimmerGain.gain.setValueAtTime(0.004, a.currentTime);
+        shimmer.connect(shimmerGain); shimmerGain.connect(a.destination);
+        shimmer.start();
+        ambientNodes.push(shimmer, shimmerGain);
+
+        // Layer 4: Random casino chatter - periodic faint chimes & pings
+        function scheduleChatter() {
+          if (!ambientRunning) return;
+          const a = getCtx();
+          const t = a.currentTime;
+          const r = Math.random();
+
+          if (r < 0.35) {
+            // Distant slot machine coin clink
+            playTone(2800 + Math.random() * 1200, t, 0.04, 'sine', 0.012);
+            playTone(3500 + Math.random() * 500, t + 0.05, 0.03, 'sine', 0.008);
+          } else if (r < 0.6) {
+            // Faint chip stack click
+            playTone(1200 + Math.random() * 600, t, 0.015, 'square', 0.006);
+          } else if (r < 0.8) {
+            // Distant bell ding
+            playTone(1400 + Math.random() * 400, t, 0.15, 'sine', 0.01);
+          }
+          // else silence (natural gap)
+
+          const nextDelay = 800 + Math.random() * 2500; // 0.8 - 3.3s between sounds
+          ambientTimer = setTimeout(scheduleChatter, nextDelay);
+        }
+
+        // Start chatter after a brief initial pause
+        ambientTimer = setTimeout(scheduleChatter, 1500);
+      }
+
+      function stopAmbient() {
+        ambientRunning = false;
+        if (ambientTimer) { clearTimeout(ambientTimer); ambientTimer = null; }
+        ambientNodes.forEach(n => { try { n.stop ? n.stop() : n.disconnect(); } catch(e){} });
+        ambientNodes = [];
+      }
+
       return {
-        init() { safe(() => { if (!initialized) { getCtx(); initialized = true; } }); },
+        init() { safe(() => { if (!initialized) { getCtx(); initialized = true; startAmbient(); } }); },
 
         click() { safe(() => {
           const a = getCtx(), t = a.currentTime;
@@ -1061,6 +1136,7 @@
     const screens = ['landing', 'dice-game', 'slot-game', 'wheel-game', 'result'];
     let currentScreen = 0;
     const gameState = { mood: null, movie: null, food: null };
+    const previousResults = { moods: [], movies: [], foods: [] };
 
     function showScreen(id) {
       document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
@@ -1099,6 +1175,11 @@
     }
 
     function resetGame() {
+      // Track previous results to avoid repeats on re-roll
+      if (gameState.mood) previousResults.moods.push(gameState.mood.name);
+      if (gameState.movie) previousResults.movies.push(gameState.movie.title);
+      if (gameState.food) previousResults.foods.push(gameState.food.name);
+
       currentScreen = 0;
       gameState.mood = null;
       gameState.movie = null;
@@ -1123,7 +1204,12 @@
       // Clear previous result
       document.getElementById('dice-result').innerHTML = '';
 
-      const randomMood = Math.floor(Math.random() * 6);
+      // Avoid repeating the last mood on re-roll
+      let randomMood;
+      const availableMoods = Array.from({length: 6}, (_, i) => i)
+        .filter(i => !previousResults.moods.includes(MOODS[i].name));
+      const moodPool = availableMoods.length > 0 ? availableMoods : Array.from({length: 6}, (_, i) => i);
+      randomMood = moodPool[Math.floor(Math.random() * moodPool.length)];
       const cube = document.getElementById('dice-cube');
 
       // Rotation map: which rotation shows which face forward
@@ -1169,9 +1255,12 @@
 
     function initSlotGame() {
       slotSpinCount = 0;
-      slotMaxSpins = Math.floor(Math.random() * 6) + 2; // 2 to 7 spins
+      slotMaxSpins = Math.floor(Math.random() * 7) + 1; // 1 to 7 spins
       slotMoviePool = getMoviesForMood(gameState.mood?.name);
-      slotWinningMovie = slotMoviePool[Math.floor(Math.random() * slotMoviePool.length)];
+      // Avoid repeating previously selected movies on re-roll
+      const availableMovies = slotMoviePool.filter(m => !previousResults.movies.includes(m.title));
+      const moviePickPool = availableMovies.length > 0 ? availableMovies : slotMoviePool;
+      slotWinningMovie = moviePickPool[Math.floor(Math.random() * moviePickPool.length)];
       slotIsSpinning = false;
       document.getElementById('slot-result').innerHTML = '';
       document.getElementById('spin-counter').textContent = '';
@@ -1370,7 +1459,11 @@
       document.getElementById('btn-wheel').style.opacity = '0.5';
       document.getElementById('wheel-result').innerHTML = '';
 
-      const selectedIndex = Math.floor(Math.random() * FOODS.length);
+      // Avoid repeating previously selected foods on re-roll
+      const availableFoodIdxs = Array.from({length: FOODS.length}, (_, i) => i)
+        .filter(i => !previousResults.foods.includes(FOODS[i].name));
+      const foodPool = availableFoodIdxs.length > 0 ? availableFoodIdxs : Array.from({length: FOODS.length}, (_, i) => i);
+      const selectedIndex = foodPool[Math.floor(Math.random() * foodPool.length)];
       const segAngle = 360 / FOODS.length;
 
       // Target: pointer is at top (0 degrees). We need the selected segment's center at the top.
