@@ -741,83 +741,148 @@
         try { fn(); } catch (e) { /* silent fail */ }
       }
 
-      // ---- Casino Ambient Background ----
-      let ambientRunning = false;
-      let ambientNodes = [];
-      let ambientTimer = null;
+      // ---- Casino Background Music (Loopy Jazz/Lounge) ----
+      let bgRunning = false;
+      let bgTimer = null;
 
-      function startAmbient() {
-        if (ambientRunning) return;
-        ambientRunning = true;
+      // Musical notes (Hz) - jazzy swing feel
+      const N = {
+        C3:131, D3:147, E3:165, F3:175, G3:196, A3:220, Bb3:233, B3:247,
+        C4:262, D4:294, E4:330, F4:349, G4:392, A4:440, Bb4:466, B4:494,
+        C5:523, D5:587, E5:659, F5:698, G5:784, A5:880
+      };
+
+      // Swing bass line (walking bass, 8 bars, repeats)
+      const bassLine = [
+        N.C3, N.E3, N.G3, N.A3,   // Cmaj
+        N.F3, N.A3, N.C4, N.A3,   // Fmaj
+        N.G3, N.B3, N.D4, N.B3,   // Gmaj
+        N.C3, N.E3, N.G3, N.C4,   // Cmaj
+        N.A3, N.C4, N.E4, N.C4,   // Am
+        N.D3, N.F3, N.A3, N.F3,   // Dm
+        N.G3, N.B3, N.D4, N.G3,   // G7
+        N.C3, N.G3, N.E3, N.C3    // Cmaj resolve
+      ];
+
+      // Cheerful melody (syncopated, swinging)
+      const melody = [
+        { n: N.E5, d: 0.3 }, { n: N.G5, d: 0.2 }, { n: N.E5, d: 0.4 }, { n: 0, d: 0.3 },
+        { n: N.D5, d: 0.2 }, { n: N.E5, d: 0.3 }, { n: N.C5, d: 0.5 }, { n: 0, d: 0.2 },
+        { n: N.A4, d: 0.3 }, { n: N.C5, d: 0.3 }, { n: N.D5, d: 0.2 }, { n: N.E5, d: 0.5 },
+        { n: 0, d: 0.3 }, { n: N.G4, d: 0.2 }, { n: N.A4, d: 0.3 }, { n: N.C5, d: 0.4 },
+        { n: N.E5, d: 0.2 }, { n: N.D5, d: 0.3 }, { n: N.C5, d: 0.2 }, { n: N.A4, d: 0.4 },
+        { n: 0, d: 0.3 }, { n: N.G4, d: 0.3 }, { n: N.A4, d: 0.2 }, { n: N.B4, d: 0.3 },
+        { n: N.C5, d: 0.5 }, { n: N.E5, d: 0.3 }, { n: N.G5, d: 0.4 }, { n: N.E5, d: 0.3 },
+        { n: N.C5, d: 0.6 }, { n: 0, d: 0.5 }
+      ];
+
+      // Chord stabs (jazzy comping) - played as triads
+      const chords = [
+        { notes: [N.C4, N.E4, N.G4], beat: 0 },
+        { notes: [N.C4, N.E4, N.G4], beat: 3 },
+        { notes: [N.F4, N.A4, N.C5], beat: 4 },
+        { notes: [N.F4, N.A4, N.C5], beat: 7 },
+        { notes: [N.G4, N.B4, N.D5], beat: 8 },
+        { notes: [N.G4, N.B4, N.D5], beat: 10 },
+        { notes: [N.C4, N.E4, N.G4], beat: 12 },
+        { notes: [N.C4, N.E4, N.G4], beat: 15 },
+        { notes: [N.A3, N.C4, N.E4], beat: 16 },
+        { notes: [N.A3, N.C4, N.E4], beat: 19 },
+        { notes: [N.D4, N.F4, N.A4], beat: 20 },
+        { notes: [N.D4, N.F4, N.A4], beat: 22 },
+        { notes: [N.G3, N.B3, N.D4], beat: 24 },
+        { notes: [N.G3, N.B3, N.F4], beat: 26 },  // G7
+        { notes: [N.C4, N.E4, N.G4], beat: 28 },
+        { notes: [N.C4, N.E4, N.G4], beat: 30 }
+      ];
+
+      const BEAT_DUR = 0.25; // seconds per beat (= 240 BPM swing feel, lively)
+      const LOOP_BEATS = 32;
+      const LOOP_DUR = LOOP_BEATS * BEAT_DUR; // 8 seconds per loop
+
+      function playLoop() {
+        if (!bgRunning) return;
         const a = getCtx();
+        const t = a.currentTime + 0.05; // tiny offset to avoid glitches
 
-        // Layer 1: Deep warm pad (low drone simulating room hum)
-        const pad = a.createOscillator();
-        const padGain = a.createGain();
-        pad.type = 'sine';
-        pad.frequency.setValueAtTime(55, a.currentTime); // A1 - deep warm bass
-        padGain.gain.setValueAtTime(0.03, a.currentTime);
-        pad.connect(padGain); padGain.connect(a.destination);
-        pad.start();
-        ambientNodes.push(pad, padGain);
+        // --- Walking Bass ---
+        bassLine.forEach((freq, i) => {
+          const osc = a.createOscillator();
+          const gain = a.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, t + i * BEAT_DUR);
+          gain.gain.setValueAtTime(0.06, t + i * BEAT_DUR);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + i * BEAT_DUR + BEAT_DUR * 0.9);
+          osc.connect(gain); gain.connect(a.destination);
+          osc.start(t + i * BEAT_DUR);
+          osc.stop(t + i * BEAT_DUR + BEAT_DUR * 0.95);
+        });
 
-        // Layer 2: Soft fifth harmony (adds warmth)
-        const pad2 = a.createOscillator();
-        const pad2Gain = a.createGain();
-        pad2.type = 'sine';
-        pad2.frequency.setValueAtTime(82, a.currentTime); // E2 - fifth above bass
-        pad2Gain.gain.setValueAtTime(0.015, a.currentTime);
-        pad2.connect(pad2Gain); pad2Gain.connect(a.destination);
-        pad2.start();
-        ambientNodes.push(pad2, pad2Gain);
-
-        // Layer 3: Very subtle high shimmer (neon buzz feel)
-        const shimmer = a.createOscillator();
-        const shimmerGain = a.createGain();
-        shimmer.type = 'sine';
-        shimmer.frequency.setValueAtTime(3520, a.currentTime); // A7 - neon hum
-        shimmerGain.gain.setValueAtTime(0.004, a.currentTime);
-        shimmer.connect(shimmerGain); shimmerGain.connect(a.destination);
-        shimmer.start();
-        ambientNodes.push(shimmer, shimmerGain);
-
-        // Layer 4: Random casino chatter - periodic faint chimes & pings
-        function scheduleChatter() {
-          if (!ambientRunning) return;
-          const a = getCtx();
-          const t = a.currentTime;
-          const r = Math.random();
-
-          if (r < 0.35) {
-            // Distant slot machine coin clink
-            playTone(2800 + Math.random() * 1200, t, 0.04, 'sine', 0.012);
-            playTone(3500 + Math.random() * 500, t + 0.05, 0.03, 'sine', 0.008);
-          } else if (r < 0.6) {
-            // Faint chip stack click
-            playTone(1200 + Math.random() * 600, t, 0.015, 'square', 0.006);
-          } else if (r < 0.8) {
-            // Distant bell ding
-            playTone(1400 + Math.random() * 400, t, 0.15, 'sine', 0.01);
+        // --- Melody ---
+        let melodyTime = 0;
+        melody.forEach(({ n, d }) => {
+          if (n > 0) {
+            const osc = a.createOscillator();
+            const gain = a.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(n, t + melodyTime);
+            gain.gain.setValueAtTime(0.07, t + melodyTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + melodyTime + d * 0.95);
+            osc.connect(gain); gain.connect(a.destination);
+            osc.start(t + melodyTime);
+            osc.stop(t + melodyTime + d);
           }
-          // else silence (natural gap)
+          melodyTime += d;
+        });
 
-          const nextDelay = 800 + Math.random() * 2500; // 0.8 - 3.3s between sounds
-          ambientTimer = setTimeout(scheduleChatter, nextDelay);
+        // --- Chord Stabs (short, punchy triads) ---
+        chords.forEach(({ notes, beat }) => {
+          notes.forEach(freq => {
+            const osc = a.createOscillator();
+            const gain = a.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, t + beat * BEAT_DUR);
+            gain.gain.setValueAtTime(0.025, t + beat * BEAT_DUR);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + beat * BEAT_DUR + BEAT_DUR * 1.5);
+            osc.connect(gain); gain.connect(a.destination);
+            osc.start(t + beat * BEAT_DUR);
+            osc.stop(t + beat * BEAT_DUR + BEAT_DUR * 1.8);
+          });
+        });
+
+        // --- Hi-hat rhythm (swing feel) ---
+        for (let i = 0; i < LOOP_BEATS; i++) {
+          // Swing: every other beat slightly delayed
+          const swing = (i % 2 === 1) ? BEAT_DUR * 0.12 : 0;
+          const vol = (i % 4 === 0) ? 0.02 : 0.012; // accent on downbeats
+          const osc = a.createOscillator();
+          const gain = a.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(8000 + Math.random() * 2000, t + i * BEAT_DUR + swing);
+          gain.gain.setValueAtTime(vol, t + i * BEAT_DUR + swing);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + i * BEAT_DUR + swing + 0.03);
+          osc.connect(gain); gain.connect(a.destination);
+          osc.start(t + i * BEAT_DUR + swing);
+          osc.stop(t + i * BEAT_DUR + swing + 0.04);
         }
 
-        // Start chatter after a brief initial pause
-        ambientTimer = setTimeout(scheduleChatter, 1500);
+        // Schedule next loop
+        bgTimer = setTimeout(playLoop, LOOP_DUR * 1000 - 50);
       }
 
-      function stopAmbient() {
-        ambientRunning = false;
-        if (ambientTimer) { clearTimeout(ambientTimer); ambientTimer = null; }
-        ambientNodes.forEach(n => { try { n.stop ? n.stop() : n.disconnect(); } catch(e){} });
-        ambientNodes = [];
+      function startBgMusic() {
+        if (bgRunning) return;
+        bgRunning = true;
+        playLoop();
+      }
+
+      function stopBgMusic() {
+        bgRunning = false;
+        if (bgTimer) { clearTimeout(bgTimer); bgTimer = null; }
       }
 
       return {
-        init() { safe(() => { if (!initialized) { getCtx(); initialized = true; startAmbient(); } }); },
+        init() { safe(() => { if (!initialized) { getCtx(); initialized = true; startBgMusic(); } }); },
 
         click() { safe(() => {
           const a = getCtx(), t = a.currentTime;
@@ -1267,8 +1332,7 @@
     }
 
     function updateSpinCounter() {
-      document.getElementById('spin-counter').textContent =
-        `Tentativa ${slotSpinCount} de ${slotMaxSpins}`;
+      document.getElementById('spin-counter').textContent = '';
     }
 
     function populateReelWithTarget(reelId, targetMovie) {
@@ -1373,7 +1437,7 @@
           SoundEngine.buzzer();
           btn.disabled = false;
           btn.style.opacity = '1';
-          btn.textContent = `PUXAR DE NOVO! (${slotSpinCount}/${slotMaxSpins}) 🎰`;
+          btn.textContent = `PUXAR DE NOVO! 🎰`;
         }
       }, waitTime);
     });
