@@ -162,6 +162,71 @@
     .neon-btn:active {
       transform: scale(0.95);
     }
+    /* ==================== Dice Game ==================== */
+    #dice-game h2 {
+      font-family: var(--font-display);
+      font-size: clamp(1.2rem, 5vw, 2rem);
+      color: var(--neon-cyan);
+      margin-bottom: 1.5rem;
+    }
+
+    .dice-scene {
+      width: 140px;
+      height: 140px;
+      perspective: 600px;
+      margin: 2rem auto;
+    }
+
+    .dice-cube {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 2.5s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+
+    .dice-face {
+      position: absolute;
+      width: 140px;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.5rem;
+      background: rgba(26, 0, 48, 0.9);
+      border: 2px solid var(--neon-cyan);
+      border-radius: 16px;
+      box-shadow: inset 0 0 30px rgba(0, 240, 255, 0.15), 0 0 15px rgba(0, 240, 255, 0.2);
+      backface-visibility: visible;
+    }
+
+    .front  { transform: translateZ(70px); }
+    .back   { transform: rotateY(180deg) translateZ(70px); }
+    .right  { transform: rotateY(90deg) translateZ(70px); }
+    .left   { transform: rotateY(-90deg) translateZ(70px); }
+    .top    { transform: rotateX(90deg) translateZ(70px); }
+    .bottom { transform: rotateX(-90deg) translateZ(70px); }
+
+    #dice-result {
+      min-height: 4rem;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .result-reveal {
+      font-family: var(--font-display);
+      font-size: clamp(1.5rem, 5vw, 2.5rem);
+      color: var(--neon-yellow);
+      animation: reveal-pop 0.5s ease-out;
+    }
+
+    @keyframes reveal-pop {
+      0% { transform: scale(0); opacity: 0; }
+      70% { transform: scale(1.3); }
+      100% { transform: scale(1); opacity: 1; }
+    }
   </style>
 </head>
 <body>
@@ -189,6 +254,22 @@
 
   <!-- ==================== Dice Game Section ==================== -->
   <section id="dice-game">
+    <h2 class="neon-text-cyan">QUAL O MOOD DA NOITE?</h2>
+
+    <div class="dice-scene">
+      <div class="dice-cube" id="dice-cube">
+        <div class="dice-face front">💕</div>
+        <div class="dice-face back">🔥</div>
+        <div class="dice-face right">🥹</div>
+        <div class="dice-face left">😂</div>
+        <div class="dice-face top">😱</div>
+        <div class="dice-face bottom">😭</div>
+      </div>
+    </div>
+
+    <div id="dice-result"></div>
+
+    <button id="btn-roll" class="neon-btn">JOGAR O DADO 🎲</button>
   </section>
 
   <!-- ==================== Slot Game Section ==================== -->
@@ -367,6 +448,51 @@
     // ==================== Wire Up Landing Button ====================
     document.getElementById('btn-start').addEventListener('click', () => {
       nextScreen(); // goes to dice-game
+    });
+    // ==================== Dice Game ====================
+    document.getElementById('btn-roll').addEventListener('click', () => {
+      const btn = document.getElementById('btn-roll');
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+
+      // Clear previous result
+      document.getElementById('dice-result').innerHTML = '';
+
+      const randomMood = Math.floor(Math.random() * 6);
+      const cube = document.getElementById('dice-cube');
+
+      // Rotation map: which rotation shows which face forward
+      const rotations = [
+        { x: 0, y: 0 },       // front - 💕 Romântico
+        { x: 0, y: 180 },     // back - 🔥 Adrenalina
+        { x: 0, y: -90 },     // right - 🥹 Nostalgia
+        { x: 0, y: 90 },      // left - 😂 Comédia
+        { x: -90, y: 0 },     // top - 😱 Suspense
+        { x: 90, y: 0 },      // bottom - 😭 Choradeira
+      ];
+
+      // Dramatic spin: multiple full rotations + final position
+      const extraSpinsX = 720 + Math.random() * 360;
+      const extraSpinsY = 720 + Math.random() * 360;
+      const targetX = extraSpinsX + rotations[randomMood].x;
+      const targetY = extraSpinsY + rotations[randomMood].y;
+
+      cube.style.transition = 'transform 2.5s cubic-bezier(0.2, 0.8, 0.3, 1)';
+      cube.style.transform = `rotateX(${targetX}deg) rotateY(${targetY}deg)`;
+
+      // After spin completes, show result
+      setTimeout(() => {
+        gameState.mood = MOODS[randomMood];
+        document.getElementById('dice-result').innerHTML =
+          `<span class="result-reveal">${MOODS[randomMood].emoji} ${MOODS[randomMood].name}!</span>`;
+
+        // Auto-advance after showing result
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.style.opacity = '1';
+          nextScreen();
+        }, 2000);
+      }, 2700);
     });
   </script>
 
