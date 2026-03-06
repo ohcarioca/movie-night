@@ -865,6 +865,73 @@
       { title: 'Cães de Aluguel', year: 1992 }
     ];
 
+    // ==================== Movie-Mood Correlation ====================
+    const MOVIE_MOODS = {
+      'Romântico': [
+        'Casablanca', 'La La Land', 'Titanic', 'Brilho Eterno de uma Mente Sem Lembranças',
+        'Amor à Flor da Pele', 'O Fabuloso Destino de Amélie Poulain', 'Retrato de uma Jovem em Chamas',
+        'O Segredo de Brokeback Mountain', 'Moonlight', 'Encontros e Desencontros',
+        'A Felicidade Não se Compra', 'Cantando na Chuva', 'Vertigo', 'Feitiço do Tempo'
+      ],
+      'Adrenalina': [
+        'Star Wars – O Império Contra-Ataca', 'Star Wars: Uma Nova Esperança', 'Star Wars – O Retorno de Jedi',
+        'O Senhor dos Anéis: A Sociedade do Anel', 'O Senhor dos Anéis: O Retorno do Rei', 'O Senhor dos Anéis: As Duas Torres',
+        'Batman: O Cavaleiro das Trevas', 'Vingadores: Guerra Infinita', 'Vingadores: Ultimato',
+        'Mad Max: Estrada da Fúria', 'Matrix', 'O Exterminador do Futuro 2', 'O Exterminador do Futuro',
+        'Duro de Matar', 'Indiana Jones e a Última Cruzada', 'Os Caçadores da Arca Perdida',
+        'Aliens, O Resgate', 'Gladiador', 'Clube da Luta', 'Fogo Contra Fogo',
+        'Caçadores de Emoção', 'Homem-Aranha: No Aranhaverso', 'Pantera Negra', 'Jurassic Park',
+        'Pulp Fiction: Tempo de Violência', 'Guardiões da Galáxia', 'Thor: Ragnarok',
+        'O Profissional', 'Cães de Aluguel', 'Sete Samurais', 'Whiplash'
+      ],
+      'Nostalgia': [
+        'De Volta para o Futuro', 'E.T. – O Extraterrestre', 'Jurassic Park', 'Os Caça-Fantasmas',
+        'Forrest Gump', 'Cantando na Chuva', 'Paddington 2', 'Feitiço do Tempo',
+        'Up – Altas Aventuras', 'Star Wars: Uma Nova Esperança', 'Os Caçadores da Arca Perdida',
+        'Blade Runner', 'Cidadão Kane', 'A Felicidade Não se Compra', 'Casablanca',
+        'Doze Homens e Uma Sentença', 'Indiana Jones e a Última Cruzada', 'A Viagem de Chihiro',
+        '2001: Uma Odisseia no Espaço', 'O Senhor dos Anéis: A Sociedade do Anel',
+        'Star Wars – O Império Contra-Ataca', 'Star Wars – O Retorno de Jedi',
+        'Três Homens em Conflito', 'Sete Samurais', 'Lawrence da Arábia'
+      ],
+      'Comédia': [
+        'O Grande Lebowski', 'Todo Mundo Quase Morto', 'Scott Pilgrim Contra o Mundo',
+        'Feitiço do Tempo', 'Os Caça-Fantasmas', 'Guardiões da Galáxia', 'Thor: Ragnarok',
+        'Pulp Fiction: Tempo de Violência', 'Faça a Coisa Certa', 'Paddington 2',
+        'Forrest Gump', 'Trainspotting', 'Duro de Matar', 'O Fabuloso Destino de Amélie Poulain',
+        'Homem-Aranha: No Aranhaverso', 'Cantando na Chuva', 'Up – Altas Aventuras',
+        'De Volta para o Futuro'
+      ],
+      'Suspense': [
+        'O Iluminado', 'Psicose', 'O Exorcista', 'Se7en – Os Sete Crimes Capitais',
+        'O Silêncio dos Inocentes', 'Um Lugar Silencioso', 'Parasita', 'Corra!',
+        'Vertigo', 'Janela Indiscreta', 'Os Suspeitos', 'Cidade dos Sonhos',
+        'Donnie Darko', 'Blade Runner', 'Sangue Negro', 'Tubarão',
+        'O Poderoso Chefão', 'O Poderoso Chefão: Parte II', 'Os Bons Companheiros',
+        'Aliens, O Resgate', 'A Origem', 'Clube da Luta', 'Fogo Contra Fogo',
+        'Apocalypse Now', 'Onde os Fracos Não Têm Vez', 'Los Angeles: Cidade Proibida',
+        'A Rede Social', 'Blade Runner 2049', 'O Labirinto do Fauno', 'A Chegada',
+        'Cães de Aluguel'
+      ],
+      'Choradeira': [
+        'A Lista de Schindler', 'Up – Altas Aventuras', 'Titanic',
+        'O Resgate do Soldado Ryan', 'Brilho Eterno de uma Mente Sem Lembranças',
+        'Moonlight', 'O Segredo de Brokeback Mountain', 'A Viagem de Chihiro',
+        'A Chegada', 'O Labirinto do Fauno', 'Whiplash', 'La La Land',
+        'Retrato de uma Jovem em Chamas', 'Um Estranho no Ninho', 'Forrest Gump',
+        'Vingadores: Ultimato', 'O Senhor dos Anéis: O Retorno do Rei',
+        'Gladiador', 'O Profissional', 'E.T. – O Extraterrestre',
+        'Um Sonho de Liberdade', 'A Felicidade Não se Compra'
+      ]
+    };
+
+    function getMoviesForMood(moodName) {
+      const titles = MOVIE_MOODS[moodName];
+      if (!titles) return MOVIES;
+      const filtered = MOVIES.filter(m => titles.includes(m.title));
+      return filtered.length >= 5 ? filtered : MOVIES;
+    }
+
     // ==================== Utility Functions ====================
     function shuffleArray(arr) {
       const a = [...arr];
@@ -980,11 +1047,13 @@
     let slotMaxSpins = 0;
     let slotWinningMovie = null;
     let slotIsSpinning = false;
+    let slotMoviePool = MOVIES;
 
     function initSlotGame() {
       slotSpinCount = 0;
       slotMaxSpins = Math.floor(Math.random() * 6) + 2; // 2 to 7 spins
-      slotWinningMovie = MOVIES[Math.floor(Math.random() * MOVIES.length)];
+      slotMoviePool = getMoviesForMood(gameState.mood?.name);
+      slotWinningMovie = slotMoviePool[Math.floor(Math.random() * slotMoviePool.length)];
       slotIsSpinning = false;
       document.getElementById('slot-result').innerHTML = '';
       document.getElementById('spin-counter').textContent = '';
@@ -1001,8 +1070,8 @@
       strip.style.transition = 'none';
       strip.style.transform = 'translateY(0)';
 
-      // Build reel: random movies, then the target at the landing position
-      const shuffled = shuffleArray(MOVIES).slice(0, 15);
+      // Build reel: random movies from mood pool, then the target at the landing position
+      const shuffled = shuffleArray(slotMoviePool).slice(0, 15);
       const landingIndex = shuffled.length; // target goes at the end
       shuffled.push(targetMovie);
 
@@ -1039,7 +1108,7 @@
     function getRandomMovieExcluding(exclude) {
       let movie;
       do {
-        movie = MOVIES[Math.floor(Math.random() * MOVIES.length)];
+        movie = slotMoviePool[Math.floor(Math.random() * slotMoviePool.length)];
       } while (movie.title === exclude.title);
       return movie;
     }
@@ -1105,10 +1174,10 @@
     function createWheelLights() {
       const container = document.getElementById('wheel-lights');
       container.innerHTML = '';
-      const numLights = 24;
+      const numLights = 20;
       const containerSize = 332;
       const center = containerSize / 2;
-      const radius = center; // lights sit on the outer edge of the gold border
+      const radius = center - 6; // lights sit just inside the container edge
       for (let i = 0; i < numLights; i++) {
         const angle = (i / numLights) * 2 * Math.PI - Math.PI / 2;
         const light = document.createElement('div');
