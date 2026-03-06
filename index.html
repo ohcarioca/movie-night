@@ -78,6 +78,35 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    /* ==================== Music Toggle Button ==================== */
+    .music-toggle {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 9999;
+      background: rgba(10, 0, 21, 0.85);
+      border: 2px solid var(--neon-cyan);
+      color: var(--neon-cyan);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 2rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+      white-space: nowrap;
+    }
+    .music-toggle:hover {
+      background: rgba(0, 240, 255, 0.15);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+    }
+    .music-toggle.off {
+      border-color: #555;
+      color: #777;
+      box-shadow: none;
+    }
+
     /* ==================== Neon Text Utilities ==================== */
     .neon-text {
       text-shadow:
@@ -596,6 +625,9 @@
 </head>
 <body>
 
+  <!-- ==================== Music Toggle Button ==================== -->
+  <button id="btn-music" class="music-toggle" title="Trocar música">🎵 Jazz</button>
+
   <!-- ==================== Landing Section ==================== -->
   <section id="landing" class="active">
     <h1 class="neon-text">MOVIE NIGHT</h1>
@@ -741,132 +773,138 @@
         try { fn(); } catch (e) { /* silent fail */ }
       }
 
-      // ---- Casino Background Music (Loopy Jazz/Lounge) ----
+      // ---- Casino Background Music (3 styles + off) ----
       let bgRunning = false;
       let bgTimer = null;
+      let bgStyle = 0; // 0=jazz, 1=bossa, 2=funk, 3=off
 
-      // Musical notes (Hz) - jazzy swing feel
       const N = {
-        C3:131, D3:147, E3:165, F3:175, G3:196, A3:220, Bb3:233, B3:247,
-        C4:262, D4:294, E4:330, F4:349, G4:392, A4:440, Bb4:466, B4:494,
-        C5:523, D5:587, E5:659, F5:698, G5:784, A5:880
+        C3:131, D3:147, Eb3:156, E3:165, F3:175, G3:196, Ab3:208, A3:220, Bb3:233, B3:247,
+        C4:262, D4:294, Eb4:311, E4:330, F4:349, G4:392, Ab4:415, A4:440, Bb4:466, B4:494,
+        C5:523, D5:587, Eb5:622, E5:659, F5:698, G5:784, Ab5:831, A5:880, Bb5:932
       };
 
-      // Swing bass line (walking bass, 8 bars, repeats)
-      const bassLine = [
-        N.C3, N.E3, N.G3, N.A3,   // Cmaj
-        N.F3, N.A3, N.C4, N.A3,   // Fmaj
-        N.G3, N.B3, N.D4, N.B3,   // Gmaj
-        N.C3, N.E3, N.G3, N.C4,   // Cmaj
-        N.A3, N.C4, N.E4, N.C4,   // Am
-        N.D3, N.F3, N.A3, N.F3,   // Dm
-        N.G3, N.B3, N.D4, N.G3,   // G7
-        N.C3, N.G3, N.E3, N.C3    // Cmaj resolve
-      ];
-
-      // Cheerful melody (syncopated, swinging)
-      const melody = [
-        { n: N.E5, d: 0.3 }, { n: N.G5, d: 0.2 }, { n: N.E5, d: 0.4 }, { n: 0, d: 0.3 },
-        { n: N.D5, d: 0.2 }, { n: N.E5, d: 0.3 }, { n: N.C5, d: 0.5 }, { n: 0, d: 0.2 },
-        { n: N.A4, d: 0.3 }, { n: N.C5, d: 0.3 }, { n: N.D5, d: 0.2 }, { n: N.E5, d: 0.5 },
-        { n: 0, d: 0.3 }, { n: N.G4, d: 0.2 }, { n: N.A4, d: 0.3 }, { n: N.C5, d: 0.4 },
-        { n: N.E5, d: 0.2 }, { n: N.D5, d: 0.3 }, { n: N.C5, d: 0.2 }, { n: N.A4, d: 0.4 },
-        { n: 0, d: 0.3 }, { n: N.G4, d: 0.3 }, { n: N.A4, d: 0.2 }, { n: N.B4, d: 0.3 },
-        { n: N.C5, d: 0.5 }, { n: N.E5, d: 0.3 }, { n: N.G5, d: 0.4 }, { n: N.E5, d: 0.3 },
-        { n: N.C5, d: 0.6 }, { n: 0, d: 0.5 }
-      ];
-
-      // Chord stabs (jazzy comping) - played as triads
-      const chords = [
-        { notes: [N.C4, N.E4, N.G4], beat: 0 },
-        { notes: [N.C4, N.E4, N.G4], beat: 3 },
-        { notes: [N.F4, N.A4, N.C5], beat: 4 },
-        { notes: [N.F4, N.A4, N.C5], beat: 7 },
-        { notes: [N.G4, N.B4, N.D5], beat: 8 },
-        { notes: [N.G4, N.B4, N.D5], beat: 10 },
-        { notes: [N.C4, N.E4, N.G4], beat: 12 },
-        { notes: [N.C4, N.E4, N.G4], beat: 15 },
-        { notes: [N.A3, N.C4, N.E4], beat: 16 },
-        { notes: [N.A3, N.C4, N.E4], beat: 19 },
-        { notes: [N.D4, N.F4, N.A4], beat: 20 },
-        { notes: [N.D4, N.F4, N.A4], beat: 22 },
-        { notes: [N.G3, N.B3, N.D4], beat: 24 },
-        { notes: [N.G3, N.B3, N.F4], beat: 26 },  // G7
-        { notes: [N.C4, N.E4, N.G4], beat: 28 },
-        { notes: [N.C4, N.E4, N.G4], beat: 30 }
-      ];
-
-      const BEAT_DUR = 0.25; // seconds per beat (= 240 BPM swing feel, lively)
+      const BT = 0.25; // beat duration (240 BPM)
       const LOOP_BEATS = 32;
-      const LOOP_DUR = LOOP_BEATS * BEAT_DUR; // 8 seconds per loop
+      const LOOP_DUR = LOOP_BEATS * BT;
+
+      function pNote(freq, time, dur, type, vol) {
+        const a = getCtx();
+        const o = a.createOscillator();
+        const g = a.createGain();
+        o.type = type;
+        o.frequency.setValueAtTime(freq, time);
+        g.gain.setValueAtTime(vol, time);
+        g.gain.exponentialRampToValueAtTime(0.001, time + dur * 0.95);
+        o.connect(g); g.connect(a.destination);
+        o.start(time); o.stop(time + dur);
+      }
+
+      // ===== STYLE 1: Jazz Swing =====
+      function playJazz(t) {
+        // Walking bass
+        const bass = [N.C3,N.E3,N.G3,N.A3, N.F3,N.A3,N.C4,N.A3, N.G3,N.B3,N.D4,N.B3, N.C3,N.E3,N.G3,N.C4,
+                      N.A3,N.C4,N.E4,N.C4, N.D3,N.F3,N.A3,N.F3, N.G3,N.B3,N.D4,N.G3, N.C3,N.G3,N.E3,N.C3];
+        bass.forEach((f,i) => pNote(f, t+i*BT, BT*0.9, 'triangle', 0.06));
+        // Melody
+        const mel = [{n:N.E5,d:0.3},{n:N.G5,d:0.2},{n:N.E5,d:0.4},{n:0,d:0.3},
+          {n:N.D5,d:0.2},{n:N.E5,d:0.3},{n:N.C5,d:0.5},{n:0,d:0.2},
+          {n:N.A4,d:0.3},{n:N.C5,d:0.3},{n:N.D5,d:0.2},{n:N.E5,d:0.5},
+          {n:0,d:0.3},{n:N.G4,d:0.2},{n:N.A4,d:0.3},{n:N.C5,d:0.4},
+          {n:N.E5,d:0.2},{n:N.D5,d:0.3},{n:N.C5,d:0.2},{n:N.A4,d:0.4},
+          {n:0,d:0.3},{n:N.G4,d:0.3},{n:N.A4,d:0.2},{n:N.B4,d:0.3},
+          {n:N.C5,d:0.5},{n:N.E5,d:0.3},{n:N.G5,d:0.4},{n:N.E5,d:0.3},
+          {n:N.C5,d:0.6},{n:0,d:0.5}];
+        let mt=0; mel.forEach(({n,d})=>{ if(n>0) pNote(n,t+mt,d*0.95,'sine',0.07); mt+=d; });
+        // Chords
+        [[N.C4,N.E4,N.G4,0],[N.C4,N.E4,N.G4,3],[N.F4,N.A4,N.C5,4],[N.F4,N.A4,N.C5,7],
+         [N.G4,N.B4,N.D5,8],[N.G4,N.B4,N.D5,10],[N.C4,N.E4,N.G4,12],[N.C4,N.E4,N.G4,15],
+         [N.A3,N.C4,N.E4,16],[N.A3,N.C4,N.E4,19],[N.D4,N.F4,N.A4,20],[N.D4,N.F4,N.A4,22],
+         [N.G3,N.B3,N.D4,24],[N.G3,N.B3,N.F4,26],[N.C4,N.E4,N.G4,28],[N.C4,N.E4,N.G4,30]]
+        .forEach(([a,b,c,bt])=>{[a,b,c].forEach(f=>pNote(f,t+bt*BT,BT*1.5,'triangle',0.025));});
+        // Hi-hat
+        for(let i=0;i<LOOP_BEATS;i++){
+          const sw=(i%2===1)?BT*0.12:0;
+          pNote(8000+Math.random()*2000,t+i*BT+sw,0.03,'square',(i%4===0)?0.02:0.012);
+        }
+      }
+
+      // ===== STYLE 2: Bossa Nova =====
+      function playBossa(t) {
+        // Bossa bass (root-fifth pattern)
+        const bass = [N.A3,0,N.E3,0, N.D3,0,N.A3,0, N.G3,0,N.D4,0, N.C3,0,N.G3,0,
+                      N.F3,0,N.C4,0, N.Bb3,0,N.F3,0, N.E3,0,N.B3,0, N.A3,0,N.E3,0];
+        bass.forEach((f,i)=>{ if(f>0) pNote(f,t+i*BT,BT*1.8,'sine',0.055); });
+        // Bossa rhythm guitar (nylon feel - sine chords with syncopation)
+        const bossaBeats = [0,1.5,3,4,5.5,7, 8,9.5,11,12,13.5,15, 16,17.5,19,20,21.5,23, 24,25.5,27,28,29.5,31];
+        const bChords = [[N.A3,N.C4,N.E4],[N.A3,N.C4,N.E4],[N.A3,N.C4,N.E4],
+          [N.D4,N.F4,N.A4],[N.D4,N.F4,N.A4],[N.D4,N.F4,N.A4],
+          [N.G3,N.B3,N.D4],[N.G3,N.B3,N.D4],[N.G3,N.B3,N.D4],
+          [N.C4,N.E4,N.G4],[N.C4,N.E4,N.G4],[N.C4,N.E4,N.G4],
+          [N.F3,N.A3,N.C4],[N.F3,N.A3,N.C4],[N.F3,N.A3,N.C4],
+          [N.Bb3,N.D4,N.F4],[N.Bb3,N.D4,N.F4],[N.Bb3,N.D4,N.F4],
+          [N.E3,N.Ab3,N.B3],[N.E3,N.Ab3,N.B3],[N.E3,N.Ab3,N.B3],
+          [N.A3,N.C4,N.E4],[N.A3,N.C4,N.E4],[N.A3,N.C4,N.E4]];
+        bossaBeats.forEach((bt,i)=>{
+          const ch = bChords[i % bChords.length];
+          ch.forEach(f=>pNote(f,t+bt*BT,BT*1.2,'sine',0.02));
+        });
+        // Melody (samba-ish, laid back)
+        const mel = [{n:N.E5,d:0.4},{n:N.D5,d:0.3},{n:N.C5,d:0.5},{n:0,d:0.3},
+          {n:N.A4,d:0.3},{n:N.B4,d:0.2},{n:N.C5,d:0.4},{n:N.E5,d:0.3},{n:0,d:0.3},
+          {n:N.D5,d:0.3},{n:N.C5,d:0.3},{n:N.A4,d:0.5},{n:0,d:0.4},
+          {n:N.G4,d:0.3},{n:N.A4,d:0.3},{n:N.C5,d:0.4},{n:0,d:0.2},
+          {n:N.E5,d:0.3},{n:N.G5,d:0.4},{n:N.E5,d:0.3},{n:N.D5,d:0.5},
+          {n:0,d:0.3},{n:N.C5,d:0.3},{n:N.B4,d:0.2},{n:N.A4,d:0.5},{n:0,d:0.5}];
+        let mt=0; mel.forEach(({n,d})=>{ if(n>0) pNote(n,t+mt,d*0.9,'sine',0.06); mt+=d; });
+        // Soft shaker (bossa rhythm)
+        for(let i=0;i<LOOP_BEATS*2;i++){
+          const bt=i*BT*0.5;
+          const accent=(i%4===0)?0.018:(i%2===0)?0.012:0.007;
+          pNote(6000+Math.random()*3000,t+bt,0.02,'square',accent);
+        }
+      }
+
+      // ===== STYLE 3: Casino Funk =====
+      function playFunk(t) {
+        // Funky bass (slap-style octaves and slides)
+        const bass = [N.E3,0,N.E3,N.G3, 0,N.A3,0,N.G3, N.E3,0,N.E3,N.B3, 0,N.A3,N.G3,0,
+                      N.C3,0,N.C3,N.Eb3, 0,N.G3,0,N.Eb3, N.B3,0,N.A3,0, N.G3,N.E3,0,N.E3];
+        bass.forEach((f,i)=>{ if(f>0) pNote(f,t+i*BT,BT*0.7,'sawtooth',0.04); });
+        // Funky rhythm guitar (choppy, muted chords)
+        const fBeats = [0,0.5,2,3,4,4.5,6,7, 8,8.5,10,11,12,12.5,14,15, 16,16.5,18,19,20,20.5,22,23, 24,24.5,26,27,28,28.5,30,31];
+        fBeats.forEach(bt => {
+          const ch = (bt<8)?[N.E4,N.G4,N.B4]:(bt<16)?[N.A3,N.C4,N.E4]:(bt<24)?[N.C4,N.Eb4,N.G4]:[N.B3,N.D4,N.G4];
+          ch.forEach(f=>pNote(f,t+bt*BT,BT*0.4,'square',0.015));
+        });
+        // Melody (bluesy, punchy)
+        const mel = [{n:N.E5,d:0.15},{n:N.G5,d:0.15},{n:N.A5,d:0.3},{n:0,d:0.15},
+          {n:N.G5,d:0.15},{n:N.E5,d:0.3},{n:0,d:0.2},{n:N.D5,d:0.15},{n:N.E5,d:0.4},{n:0,d:0.3},
+          {n:N.Bb4,d:0.2},{n:N.C5,d:0.15},{n:N.D5,d:0.15},{n:N.E5,d:0.4},{n:0,d:0.25},
+          {n:N.G4,d:0.15},{n:N.Bb4,d:0.15},{n:N.C5,d:0.3},{n:N.E5,d:0.2},{n:0,d:0.2},
+          {n:N.D5,d:0.2},{n:N.C5,d:0.15},{n:N.Bb4,d:0.15},{n:N.A4,d:0.3},{n:0,d:0.2},
+          {n:N.G4,d:0.2},{n:N.A4,d:0.15},{n:N.C5,d:0.3},{n:N.E5,d:0.4},{n:0,d:0.4},
+          {n:N.G5,d:0.2},{n:N.E5,d:0.3},{n:0,d:0.5}];
+        let mt=0; mel.forEach(({n,d})=>{ if(n>0) pNote(n,t+mt,d*0.9,'sawtooth',0.035); mt+=d; });
+        // Drum pattern (kick+snare+hat)
+        for(let i=0;i<LOOP_BEATS;i++){
+          if(i%4===0) pNote(60,t+i*BT,0.1,'sine',0.07); // kick
+          if(i%4===2) pNote(200,t+i*BT,0.05,'square',0.03); // snare
+          pNote(9000+Math.random()*2000,t+i*BT,0.02,'square',(i%2===0)?0.018:0.01); // hat
+        }
+      }
+
+      const bgStyles = [
+        { name: 'Jazz', emoji: '🎷', play: playJazz },
+        { name: 'Bossa', emoji: '🎶', play: playBossa },
+        { name: 'Funk', emoji: '🎸', play: playFunk }
+      ];
 
       function playLoop() {
-        if (!bgRunning) return;
+        if (!bgRunning || bgStyle >= bgStyles.length) return;
         const a = getCtx();
-        const t = a.currentTime + 0.05; // tiny offset to avoid glitches
-
-        // --- Walking Bass ---
-        bassLine.forEach((freq, i) => {
-          const osc = a.createOscillator();
-          const gain = a.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(freq, t + i * BEAT_DUR);
-          gain.gain.setValueAtTime(0.06, t + i * BEAT_DUR);
-          gain.gain.exponentialRampToValueAtTime(0.001, t + i * BEAT_DUR + BEAT_DUR * 0.9);
-          osc.connect(gain); gain.connect(a.destination);
-          osc.start(t + i * BEAT_DUR);
-          osc.stop(t + i * BEAT_DUR + BEAT_DUR * 0.95);
-        });
-
-        // --- Melody ---
-        let melodyTime = 0;
-        melody.forEach(({ n, d }) => {
-          if (n > 0) {
-            const osc = a.createOscillator();
-            const gain = a.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(n, t + melodyTime);
-            gain.gain.setValueAtTime(0.07, t + melodyTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, t + melodyTime + d * 0.95);
-            osc.connect(gain); gain.connect(a.destination);
-            osc.start(t + melodyTime);
-            osc.stop(t + melodyTime + d);
-          }
-          melodyTime += d;
-        });
-
-        // --- Chord Stabs (short, punchy triads) ---
-        chords.forEach(({ notes, beat }) => {
-          notes.forEach(freq => {
-            const osc = a.createOscillator();
-            const gain = a.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(freq, t + beat * BEAT_DUR);
-            gain.gain.setValueAtTime(0.025, t + beat * BEAT_DUR);
-            gain.gain.exponentialRampToValueAtTime(0.001, t + beat * BEAT_DUR + BEAT_DUR * 1.5);
-            osc.connect(gain); gain.connect(a.destination);
-            osc.start(t + beat * BEAT_DUR);
-            osc.stop(t + beat * BEAT_DUR + BEAT_DUR * 1.8);
-          });
-        });
-
-        // --- Hi-hat rhythm (swing feel) ---
-        for (let i = 0; i < LOOP_BEATS; i++) {
-          // Swing: every other beat slightly delayed
-          const swing = (i % 2 === 1) ? BEAT_DUR * 0.12 : 0;
-          const vol = (i % 4 === 0) ? 0.02 : 0.012; // accent on downbeats
-          const osc = a.createOscillator();
-          const gain = a.createGain();
-          osc.type = 'square';
-          osc.frequency.setValueAtTime(8000 + Math.random() * 2000, t + i * BEAT_DUR + swing);
-          gain.gain.setValueAtTime(vol, t + i * BEAT_DUR + swing);
-          gain.gain.exponentialRampToValueAtTime(0.001, t + i * BEAT_DUR + swing + 0.03);
-          osc.connect(gain); gain.connect(a.destination);
-          osc.start(t + i * BEAT_DUR + swing);
-          osc.stop(t + i * BEAT_DUR + swing + 0.04);
-        }
-
-        // Schedule next loop
+        const t = a.currentTime + 0.05;
+        bgStyles[bgStyle].play(t);
         bgTimer = setTimeout(playLoop, LOOP_DUR * 1000 - 50);
       }
 
@@ -881,8 +919,24 @@
         if (bgTimer) { clearTimeout(bgTimer); bgTimer = null; }
       }
 
+      function cycleBgMusic() {
+        stopBgMusic();
+        bgStyle = (bgStyle + 1) % (bgStyles.length + 1); // 0,1,2 = music, 3 = off
+        const btn = document.getElementById('btn-music');
+        if (bgStyle < bgStyles.length) {
+          btn.textContent = bgStyles[bgStyle].emoji + ' ' + bgStyles[bgStyle].name;
+          btn.classList.remove('off');
+          startBgMusic();
+        } else {
+          btn.textContent = '🔇 Off';
+          btn.classList.add('off');
+        }
+      }
+
       return {
-        init() { safe(() => { if (!initialized) { getCtx(); initialized = true; startBgMusic(); } }); },
+        init() { safe(() => { if (!initialized) { getCtx(); initialized = true; } }); },
+        cycleBgMusic() { safe(() => { if (!initialized) { getCtx(); initialized = true; } cycleBgMusic(); }); },
+        startBgMusic() { safe(() => { if (!initialized) { getCtx(); initialized = true; } if (bgStyle < bgStyles.length) startBgMusic(); }); },
 
         click() { safe(() => {
           const a = getCtx(), t = a.currentTime;
@@ -1253,9 +1307,15 @@
       showScreen('landing');
     }
 
+    // ==================== Music Toggle Button ====================
+    document.getElementById('btn-music').addEventListener('click', () => {
+      SoundEngine.cycleBgMusic();
+    });
+
     // ==================== Wire Up Landing Button ====================
     document.getElementById('btn-start').addEventListener('click', () => {
       SoundEngine.init();
+      SoundEngine.startBgMusic();
       SoundEngine.click();
       nextScreen(); // goes to dice-game
     });
@@ -1320,7 +1380,7 @@
 
     function initSlotGame() {
       slotSpinCount = 0;
-      slotMaxSpins = Math.floor(Math.random() * 7) + 1; // 1 to 7 spins
+      slotMaxSpins = Math.floor(Math.random() * 6) + 2; // 2 to 7 spins
       slotMoviePool = getMoviesForMood(gameState.mood?.name);
       // Avoid repeating previously selected movies on re-roll
       const availableMovies = slotMoviePool.filter(m => !previousResults.movies.includes(m.title));
